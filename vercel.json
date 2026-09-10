@@ -3,8 +3,8 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/api/core/:path*", "destination": "https://CORE_SERVICE_URL/:path*" },
-    { "source": "/api/prediction/:path*", "destination": "https://PREDICTION_SERVICE_URL/:path*" },
+    { "source": "/api/core/:path*", "destination": "https://predictsim-core-service.onrender.com/:path*" },
+    { "source": "/api/prediction/:path*", "destination": "https://predictsim-prediction-service.onrender.com/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
