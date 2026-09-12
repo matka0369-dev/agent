@@ -265,19 +265,31 @@ export function CreateUserForm({
             />
           </Field>
 
-          <Field label="Account type">
-            <select
-              className="select"
-              value={accountType}
-              onChange={(e) => setAccountType(e.target.value as Creatable)}
-            >
-              {allowedTypes.map((t) => (
-                <option key={t} value={t}>
-                  {ACCOUNT_TYPE_OPTION_LABEL[t]}
-                </option>
-              ))}
-            </select>
-          </Field>
+          {/* A picker only makes sense when there's an actual choice — every
+              call site today passes exactly one allowed type (this form is
+              reused per-purpose: "Create agent", "Create player", "Create
+              staff"), so showing a dropdown with one option offered a choice
+              that didn't exist. Falls back to a real select the day a caller
+              passes more than one. */}
+          {allowedTypes.length > 1 ? (
+            <Field label="Account type">
+              <select
+                className="select"
+                value={accountType}
+                onChange={(e) => setAccountType(e.target.value as Creatable)}
+              >
+                {allowedTypes.map((t) => (
+                  <option key={t} value={t}>
+                    {ACCOUNT_TYPE_OPTION_LABEL[t]}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          ) : (
+            <Field label="Account type">
+              <div className="static-value">{ACCOUNT_TYPE_OPTION_LABEL[accountType]}</div>
+            </Field>
+          )}
         </div>
 
         {/* Roles exist only for staff delegation — a native account (Admin,

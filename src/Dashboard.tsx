@@ -187,6 +187,7 @@ export function Dashboard() {
         <LedgerCard
           title="Token history"
           desc="Movements on your own wallet and your players' balances."
+          showDateFilter
         />
       </Section>
 

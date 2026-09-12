@@ -215,8 +215,14 @@ export const api = {
 
   // ---- Ledger ----
 
-  ledger: (limit?: number) =>
-    request<LedgerEntry[]>(`/ledger${limit ? `?limit=${limit}` : ''}`),
+  ledger: (opts?: { limit?: number; date?: string; agentId?: string }) => {
+    const qs = new URLSearchParams();
+    if (opts?.limit) qs.set('limit', String(opts.limit));
+    if (opts?.date) qs.set('date', opts.date);
+    if (opts?.agentId) qs.set('agentId', opts.agentId);
+    const s = qs.toString();
+    return request<LedgerEntry[]>(`/ledger${s ? `?${s}` : ''}`);
+  },
 
   grantTokens: (userId: string, amount: number, note?: string) =>
     request<LedgerEntry>(`/ledger/grant/${userId}`, {

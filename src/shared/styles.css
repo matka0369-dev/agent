@@ -534,6 +534,19 @@ h3 {
   color: var(--text-subtle);
 }
 
+/* A field with only one possible value — e.g. account type on a form that's
+   already scoped to a single kind of account. Same box as .input/.select so
+   it lines up in a form-row, styled inert (no border-strong, no focus ring)
+   so it doesn't invite a click that would do nothing. */
+.static-value {
+  padding: 9px 11px;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
 .field__hint {
   margin-top: 5px;
   font-size: 0.78rem;
