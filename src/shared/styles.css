@@ -523,7 +523,15 @@ h3 {
   border: 1px solid var(--border);
   cursor: pointer;
   font: inherit;
+  /* It's a <Link> (an <a>) now that picking a game navigates — undo the
+     browser's default anchor styling so it still reads as a card. */
+  text-decoration: none;
+  color: inherit;
   transition: border-color 0.12s, box-shadow 0.12s;
+}
+.game-card:hover,
+.game-card:visited {
+  color: inherit;
 }
 .game-card:hover {
   border-color: var(--border-strong);
