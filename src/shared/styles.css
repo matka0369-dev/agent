@@ -373,6 +373,15 @@ h3 {
     width: 260px;
     max-width: 80vw;
     max-height: none;
+    /* A fixed element with overflow-y:auto and only top/bottom set (no
+       explicit height) is supposed to stretch to fill per spec, but WebKit
+       collapses it to its content's height instead — visible whenever the
+       nav has few enough items to be shorter than the screen. Explicit
+       height sidesteps the bug outright; svh/dvh (mobile browser chrome
+       aware) with a plain vh fallback for engines that don't know them yet. */
+    height: 100vh;
+    height: 100svh;
+    height: 100dvh;
     background: var(--surface);
     box-shadow: var(--shadow);
     padding: 66px 16px 20px;
