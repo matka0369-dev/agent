@@ -1,5 +1,6 @@
 import type {
   ActiveGame,
+  AdminBusinessSummary,
   AgentRateCards,
   AggregateResponse,
   AgentSummaryRow,
@@ -161,6 +162,9 @@ export const api = {
   }) => request<UserSummary>('/users', { method: 'POST', body: JSON.stringify(body) }),
 
   statusImpact: (id: string) => request<StatusImpact>(`/users/${id}/status-impact`),
+
+  /** Platform Admin only — one Admin's business rollup (see users.controller.ts). */
+  adminBusinessSummary: (id: string) => request<AdminBusinessSummary>(`/users/${id}/business-summary`),
 
   setUserStatus: (id: string, isActive: boolean) =>
     request<UserSummary>(`/users/${id}/status`, {

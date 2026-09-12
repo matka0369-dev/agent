@@ -978,6 +978,14 @@ a.btn {
 .cell-strong {
   font-weight: 550;
 }
+.cell-link {
+  display: block;
+  text-decoration: none;
+  color: var(--accent-text);
+}
+.cell-link:hover {
+  text-decoration: underline;
+}
 .cell-muted {
   color: var(--text-muted);
   font-size: 0.82rem;

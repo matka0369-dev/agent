@@ -16,6 +16,7 @@ import {
   UserTable,
   api,
   useAuth,
+  useRoutedTabs,
   type NavItem,
   type Role,
   type UserSummary,
@@ -33,6 +34,7 @@ const AGENT_STAFF_ALLOWED_PERMISSION_KEYS = new Set([
 
 export function Dashboard() {
   const { user } = useAuth();
+  const { activeId, onSelectTab } = useRoutedTabs('overview');
   const [users, setUsers] = useState<UserSummary[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [me, setMe] = useState<UserSummary | null>(null);
@@ -115,6 +117,8 @@ export function Dashboard() {
       title="Welcome, Agent"
       subtitle="Create and moderate your own players, and fund them from your own wallet."
       nav={nav}
+      activeId={activeId}
+      onSelectTab={onSelectTab}
     >
       {error && <Alert tone="error">{error}</Alert>}
 

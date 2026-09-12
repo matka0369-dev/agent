@@ -1,4 +1,5 @@
 import { Fragment, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import type { SessionInfo, StatusImpact, UserSummary } from '../lib/types';
 import { ConfirmStatusDialog } from './ConfirmStatusDialog';
@@ -25,12 +26,17 @@ export function UserTable({
   users,
   canManage,
   onChanged,
+  linkTo,
 }: {
   title: string;
   desc?: string;
   users: UserSummary[];
   canManage: boolean;
   onChanged: () => void;
+  /** When given, a row's username becomes a link to this path — e.g. Platform
+   *  Admin clicking into one Admin's business summary. Omit for a table
+   *  that's just a roster. */
+  linkTo?: (user: UserSummary) => string;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -127,7 +133,13 @@ export function UserTable({
               <Fragment key={u.id}>
                 <tr>
                   <td>
-                    <div className="cell-strong">{u.username}</div>
+                    {linkTo ? (
+                      <Link to={linkTo(u)} className="cell-strong cell-link">
+                        {u.username}
+                      </Link>
+                    ) : (
+                      <div className="cell-strong">{u.username}</div>
+                    )}
                     <div className="cell-muted">{u.email}</div>
                   </td>
                   <td>

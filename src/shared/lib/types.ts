@@ -290,6 +290,22 @@ export interface PredictionVolume {
   byAdmin: { adminId: string; adminUsername: string; predictionCount: number; totalStake: number }[];
 }
 
+/** Platform Admin's rollup view of one Admin's business — counts and play
+ * volume, never the individual accounts or predictions underneath. */
+export interface AdminBusinessSummary {
+  adminId: string;
+  username: string;
+  createdAt: string;
+  agents: { total: number; active: number };
+  players: { total: number; active: number };
+  predictions: {
+    totalCount: number;
+    totalStake: number;
+    dailyAverageCount: number;
+    dailyAverageStake: number;
+  };
+}
+
 /** One aggregated line of an Admin's book: how much is riding on a number. */
 export interface AggregateRow {
   gameId: string;

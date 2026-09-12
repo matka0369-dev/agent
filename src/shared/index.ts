@@ -32,6 +32,9 @@ export { SettlementsCard } from './components/SettlementsCard';
 export { TransferTokensCard } from './components/TransferTokensCard';
 export { MyPredictionsCard } from './components/MyPredictionsCard';
 export { PredictForm } from './components/PredictForm';
+export { AdminBusinessCard } from './components/AdminBusinessCard';
+
+export { useRoutedTabs } from './lib/useRoutedTabs';
 
 export {
   Alert,
