@@ -294,28 +294,50 @@ function GameBetForm({
             <span>Close bets close in: {formatRemaining(closeRemaining)}</span>
           </div>
 
-          <Field label="Bet type">
-            <select
-              className="select"
-              value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value as PredictionType)}
-            >
-              <optgroup label="Open">
-                {OPEN_CUTOFF_TYPES.map((t) => (
-                  <option key={t} value={t} disabled={(typeStates.get(t) ?? 0) <= 0}>
-                    {PREDICTION_TYPE_LABEL[t]} {(typeStates.get(t) ?? 0) <= 0 ? '(closed)' : ''}
-                  </option>
-                ))}
-              </optgroup>
-              <optgroup label="Close">
-                {CLOSE_CUTOFF_TYPES.map((t) => (
-                  <option key={t} value={t} disabled={(typeStates.get(t) ?? 0) <= 0}>
-                    {PREDICTION_TYPE_LABEL[t]} {(typeStates.get(t) ?? 0) <= 0 ? '(closed)' : ''}
-                  </option>
-                ))}
-              </optgroup>
-            </select>
-          </Field>
+          {/* Shown as chips rather than a <select> so every bet type — and
+              which of them are still open — is visible at a glance instead
+              of hidden behind a dropdown the Player has to open first. */}
+          <div className="type-chip-group">
+            <div className="type-chip-group__label">Open</div>
+            <div className="type-chip-row">
+              {OPEN_CUTOFF_TYPES.map((t) => {
+                const open = (typeStates.get(t) ?? 0) > 0;
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    className={`type-chip${selectedType === t ? ' type-chip--selected' : ''}`}
+                    disabled={!open}
+                    onClick={() => setSelectedType(t)}
+                    title={open ? undefined : 'Closed'}
+                  >
+                    {PREDICTION_TYPE_LABEL[t]}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="type-chip-group">
+            <div className="type-chip-group__label">Close</div>
+            <div className="type-chip-row">
+              {CLOSE_CUTOFF_TYPES.map((t) => {
+                const open = (typeStates.get(t) ?? 0) > 0;
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    className={`type-chip${selectedType === t ? ' type-chip--selected' : ''}`}
+                    disabled={!open}
+                    onClick={() => setSelectedType(t)}
+                    title={open ? undefined : 'Closed'}
+                  >
+                    {PREDICTION_TYPE_LABEL[t]}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
           {isClosedForType && <Alert tone="error">Betting for this type has closed.</Alert>}
 

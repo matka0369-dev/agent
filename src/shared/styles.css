@@ -585,6 +585,50 @@ h3 {
   color: var(--text-subtle);
 }
 
+/* ---------- Bet type chips (Player's Predict page) ---------- */
+
+.type-chip-group {
+  margin-bottom: 4px;
+}
+.type-chip-group__label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-subtle);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.type-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.type-chip {
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 550;
+  cursor: pointer;
+}
+.type-chip:hover:not(:disabled) {
+  border-color: var(--border-strong);
+}
+.type-chip--selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.type-chip:disabled {
+  background: var(--surface-2);
+  color: var(--text-subtle);
+  border-color: var(--surface-2);
+  cursor: not-allowed;
+}
+
 /* ---------- Form ---------- */
 
 .field {
