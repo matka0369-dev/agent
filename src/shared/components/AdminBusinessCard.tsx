@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api, ApiError } from '../lib/api';
 import type { AdminBusinessSummary } from '../lib/types';
-import { Alert, Card, Empty, Stat, formatDate } from './ui';
+import { Alert, Card, Empty, RefreshButton, Stat, formatDate } from './ui';
 
 /**
  * Platform Admin's drill-down into one Admin's business, reached by
@@ -17,44 +17,47 @@ export function AdminBusinessCard() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const load = useCallback(async () => {
     if (!id) return;
-    let cancelled = false;
     setLoading(true);
-    api
-      .adminBusinessSummary(id)
-      .then((d) => {
-        if (!cancelled) setData(d);
-      })
-      .catch((e) => {
-        if (!cancelled) setError(e instanceof ApiError ? e.message : String(e));
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
+    try {
+      setData(await api.adminBusinessSummary(id));
+      setError(null);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
 
-  const backLink = (
-    <Link to="/admins" className="btn btn--ghost btn--sm">
-      ← All admins
-    </Link>
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const action = (
+    <div style={{ display: 'flex', gap: 8 }}>
+      <RefreshButton onClick={() => void load()} refreshing={loading} />
+      <Link to="/admins" className="btn btn--ghost btn--sm">
+        ← All admins
+      </Link>
+    </div>
   );
 
-  if (loading) return <Empty>Loading…</Empty>;
+  // Only the very first fetch blanks the page — a manual refresh keeps
+  // showing the last good numbers underneath, rather than flashing back to
+  // a bare "Loading…" and losing the "All admins" link with it.
+  if (loading && !data) return <Empty>Loading…</Empty>;
 
   if (error || !data) {
     return (
-      <Card title="Admin" action={backLink}>
+      <Card title="Admin" action={action}>
         <Alert tone="error">{error ?? 'Admin not found.'}</Alert>
       </Card>
     );
   }
 
   return (
-    <Card title={data.username} desc={`Admin since ${formatDate(data.createdAt)}`} action={backLink}>
+    <Card title={data.username} desc={`Admin since ${formatDate(data.createdAt)}`} action={action}>
       <div className="grid grid--stats">
         <Stat label="Agents" value={data.agents.total} hint={`${data.agents.active} active`} />
         <Stat label="Users" value={data.players.total} hint={`${data.players.active} active`} />

@@ -1,6 +1,6 @@
 import type { Prediction, PredictionOutcome } from '../lib/types';
 import { PREDICTION_TYPE_LABEL } from '../lib/types';
-import { Card, Empty, TableWrap, formatDate } from './ui';
+import { Card, Empty, RefreshButton, TableWrap, formatDate } from './ui';
 
 function OutcomeBadge({ outcome }: { outcome: PredictionOutcome }) {
   const cls = outcome === 'WON' ? 'badge--ok' : outcome === 'LOST' ? 'badge--off' : 'badge--muted';
@@ -16,22 +16,31 @@ export function PredictionsTable({
   title,
   desc,
   showPlayer = true,
+  onRefresh,
+  refreshing,
 }: {
   predictions: Prediction[];
   title?: string;
   desc?: string;
   showPlayer?: boolean;
+  /** Owner (SubtreePredictionsCard/MyPredictionsCard) fetches; this table is
+   *  purely presentational, so a manual refresh is passed in rather than
+   *  fetched here. Omit for a caller with no refetch path of its own. */
+  onRefresh?: () => void;
+  refreshing?: boolean;
 }) {
+  const action = onRefresh ? <RefreshButton onClick={onRefresh} refreshing={refreshing} /> : undefined;
+
   if (predictions.length === 0) {
     return (
-      <Card title={title ?? 'Predictions'} desc={desc}>
+      <Card title={title ?? 'Predictions'} desc={desc} action={action}>
         <Empty>No predictions yet.</Empty>
       </Card>
     );
   }
 
   return (
-    <Card title={title ?? 'Predictions'} desc={desc} flush>
+    <Card title={title ?? 'Predictions'} desc={desc} flush action={action}>
       <TableWrap>
         <thead>
           <tr>

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '../lib/api';
 import { PREDICTION_TYPE_LABEL, type SettlementsResponse } from '../lib/types';
-import { Alert, Card, Empty, Field, TableWrap } from './ui';
+import { Alert, Card, Empty, Field, RefreshButton, TableWrap } from './ui';
 
 function Signed({ value }: { value: number }) {
   return (
@@ -62,6 +62,7 @@ export function SettlementsCard() {
             ? 'Your position against your Admin, per game. Positive means owed to you.'
             : 'Your position against each agent, per game. Positive means owed to you.'
         }
+        action={<RefreshButton onClick={() => void load()} refreshing={loading} />}
       >
         {error && <Alert tone="error">{error}</Alert>}
 

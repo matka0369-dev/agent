@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '../lib/api';
 import { TOKEN_REQUEST_KIND_LABEL, type TokenRequest, type TokenRequestStatus } from '../lib/types';
-import { Alert, Button, Card, Empty, Field, TableWrap, formatDate } from './ui';
+import { Alert, Button, Card, Empty, Field, RefreshButton, TableWrap, formatDate } from './ui';
 
 function statusBadgeClass(status: TokenRequest['status']) {
   if (status === 'APPROVED') return 'badge badge--ok';
@@ -71,19 +71,22 @@ export function RequestQueueCard({ viewerId }: { viewerId?: string }) {
       title="Token requests"
       desc="Top-ups are approved by the Player's own Agent, out of that Agent's wallet. Surrenders are approved by an Admin and destroy the tokens — staff may claim and reject either, but never approve."
       action={
-        <Field label="">
-          <select
-            className="select"
-            value={status}
-            onChange={(e) => setStatus(e.target.value as TokenRequestStatus | '')}
-          >
-            {STATUS_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-        </Field>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+          <Field label="">
+            <select
+              className="select"
+              value={status}
+              onChange={(e) => setStatus(e.target.value as TokenRequestStatus | '')}
+            >
+              {STATUS_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <RefreshButton onClick={() => void load()} refreshing={loading} />
+        </div>
       }
       flush
     >

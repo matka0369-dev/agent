@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import type { SessionInfo } from '../lib/types';
-import { Alert, Button, Card, Empty, TableWrap, formatDate, shortUserAgent } from './ui';
+import { Alert, Button, Card, Empty, RefreshButton, TableWrap, formatDate, shortUserAgent } from './ui';
 
 /** Self-service session management — every role gets this. */
 export function MySessionsCard() {
@@ -42,14 +42,17 @@ export function MySessionsCard() {
       title="Your sessions"
       desc="Devices currently signed in to this account."
       action={
-        <Button
-          size="sm"
-          variant="danger"
-          disabled={busy || others === 0}
-          onClick={() => run(api.revokeMyOtherSessions)}
-        >
-          Log out {others} other{others === 1 ? '' : 's'}
-        </Button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <RefreshButton onClick={() => void load()} refreshing={busy} />
+          <Button
+            size="sm"
+            variant="danger"
+            disabled={busy || others === 0}
+            onClick={() => run(api.revokeMyOtherSessions)}
+          >
+            Log out {others} other{others === 1 ? '' : 's'}
+          </Button>
+        </div>
       }
       flush
     >

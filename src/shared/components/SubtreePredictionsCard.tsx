@@ -10,13 +10,17 @@ import { PredictionsTable } from './PredictionsTable';
 export function SubtreePredictionsCard({ title, desc }: { title?: string; desc?: string }) {
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
+    setLoading(true);
     try {
       setPredictions(await api.subtreePredictions());
       setError(null);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : String(e));
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -27,7 +31,13 @@ export function SubtreePredictionsCard({ title, desc }: { title?: string; desc?:
   return (
     <>
       {error && <Alert tone="error">{error}</Alert>}
-      <PredictionsTable predictions={predictions} title={title} desc={desc} />
+      <PredictionsTable
+        predictions={predictions}
+        title={title}
+        desc={desc}
+        onRefresh={() => void load()}
+        refreshing={loading}
+      />
     </>
   );
 }

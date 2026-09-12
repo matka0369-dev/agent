@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '../lib/api';
 import type { PredictionVolume } from '../lib/types';
-import { Alert, Card, Empty, Stat, TableWrap } from './ui';
+import { Alert, Card, Empty, RefreshButton, Stat, TableWrap } from './ui';
 
 // Platform Admin has no interest in any individual bet — "who bet what" is
 // entirely below its tier — but does need to know how much volume the
@@ -10,13 +10,17 @@ import { Alert, Card, Empty, Stat, TableWrap } from './ui';
 export function PredictionVolumeCard() {
   const [volume, setVolume] = useState<PredictionVolume | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
+    setLoading(true);
     try {
       setVolume(await api.predictionVolume());
       setError(null);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : String(e));
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -35,7 +39,12 @@ export function PredictionVolumeCard() {
         <Stat label="Admins with activity" value={volume.byAdmin.length} />
       </div>
 
-      <Card title="Volume by Admin" desc="Total stake moved under each Admin's subtree." flush>
+      <Card
+        title="Volume by Admin"
+        desc="Total stake moved under each Admin's subtree."
+        flush
+        action={<RefreshButton onClick={() => void load()} refreshing={loading} />}
+      >
         {volume.byAdmin.length === 0 ? (
           <Empty>No predictions placed yet.</Empty>
         ) : (

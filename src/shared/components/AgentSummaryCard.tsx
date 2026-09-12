@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '../lib/api';
 import type { AgentSummaryRow } from '../lib/types';
-import { Alert, Card, Empty, TableWrap } from './ui';
+import { Alert, Card, Empty, RefreshButton, TableWrap } from './ui';
 
 /**
  * Per (game, date, agent): stake collected against payout owed.
@@ -37,6 +37,7 @@ export function AgentSummaryCard() {
       title="By agent, game and date"
       desc="Stake collected against payouts settled so far. Net is the book's, not yet split per tier."
       flush
+      action={<RefreshButton onClick={() => void load()} refreshing={loading} />}
     >
       {error && (
         <div style={{ padding: '16px 16px 0' }}>

@@ -103,6 +103,28 @@ export function Button({
   return <button type={type} className={cls} {...rest} />;
 }
 
+/**
+ * Drop into a tabular/report card's `action` slot. These all fetch once on
+ * mount and otherwise only reload after some write elsewhere on the page —
+ * this is the one control that says "no, right now" without a full page
+ * reload. `refreshing` is optional: pass it when the caller tracks a
+ * distinct in-flight state, omit it for a card whose own `loading` already
+ * covers the first fetch.
+ */
+export function RefreshButton({
+  onClick,
+  refreshing,
+}: {
+  onClick: () => void;
+  refreshing?: boolean;
+}) {
+  return (
+    <Button size="sm" onClick={onClick} disabled={refreshing}>
+      {refreshing ? 'Refreshing…' : '↻ Refresh'}
+    </Button>
+  );
+}
+
 export function RoleBadge({ type }: { type: AccountType }) {
   return (
     <span className="badge badge--muted">

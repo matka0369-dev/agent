@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '../lib/api';
 import type { GameForAdmin } from '../lib/types';
-import { Alert, Card, Empty, TableWrap } from './ui';
+import { Alert, Card, Empty, RefreshButton, TableWrap } from './ui';
 
 // An Admin's single on/off switch per game — no separate layer beneath it.
 // Flipping this is what "the player can predict it when enabled" actually
@@ -46,6 +46,7 @@ export function GameEnablementCard() {
       title="Games"
       desc="Enable a game to make it available to every Agent and Player in your subtree."
       flush
+      action={<RefreshButton onClick={() => void load()} refreshing={loading} />}
     >
       {error && (
         <div style={{ padding: '16px 16px 0' }}>

@@ -8,6 +8,7 @@ import {
   Button,
   Card,
   Empty,
+  RefreshButton,
   RoleBadge,
   StatusBadge,
   TableWrap,
@@ -105,7 +106,7 @@ export function UserTable({
   }
 
   return (
-    <Card title={title} desc={desc} flush>
+    <Card title={title} desc={desc} flush action={<RefreshButton onClick={onChanged} />}>
       {error && (
         <div style={{ padding: 16, paddingBottom: 0 }}>
           <Alert tone="error">{error}</Alert>

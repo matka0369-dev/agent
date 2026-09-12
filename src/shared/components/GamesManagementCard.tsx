@@ -1,7 +1,7 @@
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '../lib/api';
 import type { Game } from '../lib/types';
-import { Alert, Button, Card, Empty, Field, TableWrap, formatDate } from './ui';
+import { Alert, Button, Card, Empty, Field, RefreshButton, TableWrap, formatDate } from './ui';
 
 const WEEKDAY_LABEL = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -48,7 +48,12 @@ export function GamesManagementCard() {
     <>
       <CreateGameForm onCreated={() => void load()} />
 
-      <Card title="Games" desc="Every game, its schedule, and its leave days." flush>
+      <Card
+        title="Games"
+        desc="Every game, its schedule, and its leave days."
+        flush
+        action={<RefreshButton onClick={() => void load()} refreshing={loading} />}
+      >
         {error && (
           <div style={{ padding: '16px 16px 0' }}>
             <Alert tone="error">{error}</Alert>

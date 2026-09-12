@@ -7,7 +7,7 @@ import {
   type PredictionType,
   type UserSummary,
 } from '../lib/types';
-import { Alert, Card, Empty, Field, TableWrap } from './ui';
+import { Alert, Card, Empty, Field, RefreshButton, TableWrap } from './ui';
 
 /**
  * The Admin's book for one game: how much is riding on each number, broken
@@ -98,7 +98,11 @@ export function AdminPredictionsCard({ agents }: { agents: UserSummary[] }) {
 
   return (
     <>
-      <Card title="Predictions" desc="Totals per number across your subtree, broken out by bet type.">
+      <Card
+        title="Predictions"
+        desc="Totals per number across your subtree, broken out by bet type."
+        action={<RefreshButton onClick={() => void load()} refreshing={loading} />}
+      >
         {error && <Alert tone="error">{error}</Alert>}
 
         <div className="form-row">

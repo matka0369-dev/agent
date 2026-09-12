@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import { LEDGER_SOURCE_LABEL, LEDGER_WALLET_LABEL, type LedgerEntry } from '../lib/types';
-import { Alert, Button, Card, Empty, TableWrap, formatDate } from './ui';
+import { Alert, Button, Card, Empty, RefreshButton, TableWrap, formatDate } from './ui';
 
 export type LedgerAgentOption = { id: string; username: string };
 
@@ -59,16 +59,16 @@ export function LedgerCard({
     void load();
   }, [load, refreshKey]);
 
-  const hasFilters = showDateFilter || (agents && agents.length > 0);
-
   return (
     <Card
       title={title}
       desc={desc}
       flush
       action={
-        hasFilters ? (
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <RefreshButton onClick={() => void load()} refreshing={loading} />
+          {(showDateFilter || (agents && agents.length > 0)) && (
+            <>
             {agents && agents.length > 0 && (
               <select
                 className="select"
@@ -106,8 +106,9 @@ export function LedgerCard({
                 Clear
               </Button>
             )}
-          </div>
-        ) : undefined
+            </>
+          )}
+        </div>
       }
     >
       {error && (

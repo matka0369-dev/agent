@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '../lib/api';
 import type { CorrectionSummary, Game, ResultCorrectionEntry } from '../lib/types';
-import { Alert, Button, Card, Empty, Field, TableWrap, formatDate } from './ui';
+import { Alert, Button, Card, Empty, Field, RefreshButton, TableWrap, formatDate } from './ui';
 
 function todayUtc(): string {
   return new Date().toISOString().slice(0, 10);
@@ -225,7 +225,12 @@ export function ResultCorrectionCard() {
         </form>
       </Card>
 
-      <Card title="Correction history" desc="Every time a result for this game was replaced." flush>
+      <Card
+        title="Correction history"
+        desc="Every time a result for this game was replaced."
+        flush
+        action={<RefreshButton onClick={() => void loadHistory()} />}
+      >
         {historyError && (
           <div style={{ padding: '16px 16px 0' }}>
             <Alert tone="error">{historyError}</Alert>

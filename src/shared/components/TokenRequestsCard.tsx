@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '../lib/api';
 import { TOKEN_REQUEST_KIND_LABEL, type TokenRequest, type TokenRequestKind } from '../lib/types';
-import { Alert, Button, Card, Empty, Field, TableWrap, formatDate } from './ui';
+import { Alert, Button, Card, Empty, Field, RefreshButton, TableWrap, formatDate } from './ui';
 
 function statusBadgeClass(status: TokenRequest['status']) {
   if (status === 'APPROVED') return 'badge badge--ok';
@@ -163,7 +163,11 @@ export function TokenRequestsCard({
         </form>
       </Card>
 
-      <Card title="Your requests" flush>
+      <Card
+        title="Your requests"
+        flush
+        action={<RefreshButton onClick={() => void load()} refreshing={loading} />}
+      >
         {loadError && (
           <div style={{ padding: '16px 16px 0' }}>
             <Alert tone="error">{loadError}</Alert>
