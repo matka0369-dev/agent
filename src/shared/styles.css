@@ -564,12 +564,15 @@ h3 {
   color: var(--success);
 }
 
+/* Not --accent-soft: --accent is portal-themed (the Player portal's own
+   accent IS green), which made "upcoming" and "open" nearly the same color
+   on exactly the portal that renders this. --warn is portal-independent. */
 .game-card--upcoming {
-  background: var(--accent-soft);
-  border-color: var(--accent-soft);
+  background: var(--warn-bg);
+  border-color: var(--warn-bg);
 }
 .game-card--upcoming .game-card__status--upcoming {
-  color: var(--accent-text);
+  color: var(--warn);
 }
 
 .game-card--closed {
