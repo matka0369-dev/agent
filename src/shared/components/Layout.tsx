@@ -11,6 +11,8 @@ export function Layout({
   subtitle,
   nav,
   children,
+  activeId: controlledActiveId,
+  onSelectTab,
 }: {
   title: string;
   subtitle?: string;
@@ -24,10 +26,19 @@ export function Layout({
    */
   nav?: NavItem[];
   children: ReactNode;
+  /**
+   * Controlled mode: pass both this and `onSelectTab` to drive which tab is
+   * active from outside (e.g. a router's current path) instead of Layout's
+   * own click-to-switch state. Omit both for the default, uncontrolled
+   * behavior every existing caller uses.
+   */
+  activeId?: string;
+  onSelectTab?: (id: string) => void;
 }) {
   const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [activeId, setActiveId] = useState<string | undefined>(nav?.[0]?.id);
+  const [internalActiveId, setInternalActiveId] = useState<string | undefined>(nav?.[0]?.id);
+  const activeId = controlledActiveId ?? internalActiveId;
 
   // If `nav` changes shape (a permission-gated tab appears/disappears) and
   // the currently active id is no longer in it, fall back to the first tab
@@ -53,7 +64,8 @@ export function Layout({
   if (!user) return null;
 
   function selectTab(id: string) {
-    setActiveId(id);
+    if (onSelectTab) onSelectTab(id);
+    else setInternalActiveId(id);
     setMenuOpen(false);
   }
 

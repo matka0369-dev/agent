@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import { api, ApiError } from '../lib/api';
 import { useAuth } from '../auth/AuthContext';
 import {
@@ -45,18 +46,18 @@ function formatDuration(ms: number): string {
   return `${m}m ${String(s).padStart(2, '0')}s`;
 }
 
-// The Player's betting UI — the third, independent layer of the
-// triple-layer cutoff/format check (a Go-service check and a DB
-// trigger/CHECK constraint are the other two; see ARCHITECTURE.md and
-// lib/predictionValidation.ts). Every game a Player's Agent's Admin has
-// enabled, today's round, live per-side countdowns, and the odds that will
-// actually apply — pulled from prediction-service/Go, which already
-// resolves all of that server-side.
-//
-// This is also the Player app's home screen — games are shown as a grid of
-// cards rather than a dropdown so the day's whole schedule (what's open,
-// what's still to come, what's already closed) is visible at a glance
-// before picking one.
+/**
+ * The Player's betting flow, split across two routes so picking a game is a
+ * real navigation rather than a selection sitting on the home screen:
+ *
+ * - "/"                 — the games grid (this app's home screen).
+ * - "/predict/:gameId"  — that one game's bet form.
+ *
+ * Both share one fetch/poll of the day's games so switching between them is
+ * instant and the live countdowns don't reset. Mounted by the "predict" tab
+ * in Dashboard.tsx, so these paths are relative to nothing else — Player is
+ * the only portal with any client-side routing.
+ */
 export function PredictForm({ onPlaced }: { onPlaced?: () => void }) {
   const { user } = useAuth();
   const [games, setGames] = useState<ActiveGame[]>([]);
@@ -64,14 +65,6 @@ export function PredictForm({ onPlaced }: { onPlaced?: () => void }) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
-
-  const [selectedGameId, setSelectedGameId] = useState<string>('');
-  const [selectedType, setSelectedType] = useState<PredictionType>('OPEN_SINGLE');
-  const [pickedNumber, setPickedNumber] = useState('');
-  const [stake, setStake] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [okMessage, setOkMessage] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -84,14 +77,6 @@ export function PredictForm({ onPlaced }: { onPlaced?: () => void }) {
       // winnings, so what matters here is the combined figure.
       if (me) setBalance(me.balance + me.winningsBalance);
       setLoadError(null);
-      setSelectedGameId((prev) => {
-        if (activeGames.some((g) => g.gameId === prev)) return prev;
-        // Default to the first game that's actually open, not just the
-        // first in the list — an upcoming or already-closed game first
-        // alphabetically shouldn't land the Player on a dead form.
-        const firstOpen = activeGames.find((g) => gameState(g, Date.now()) === 'open');
-        return (firstOpen ?? activeGames[0])?.gameId ?? '';
-      });
     } catch (e) {
       setLoadError(e instanceof ApiError ? e.message : String(e));
     } finally {
@@ -110,15 +95,101 @@ export function PredictForm({ onPlaced }: { onPlaced?: () => void }) {
     return () => clearInterval(timer);
   }, []);
 
-  const game = games.find((g) => g.gameId === selectedGameId) ?? null;
+  if (loading) return <Empty>Loading games…</Empty>;
+  if (loadError) return <Alert tone="error">{loadError}</Alert>;
+
+  return (
+    <Routes>
+      <Route path="/" element={<GamesHome games={games} now={now} balance={balance} />} />
+      <Route
+        path="/predict/:gameId"
+        element={
+          <GameBetForm
+            games={games}
+            now={now}
+            balance={balance}
+            setBalance={setBalance}
+            onPlaced={onPlaced}
+          />
+        }
+      />
+    </Routes>
+  );
+}
+
+/** Home screen: browse the day's games, pick one to bet on. No form here on
+ *  purpose — placing a prediction happens on its own page. */
+function GamesHome({ games, now, balance }: { games: ActiveGame[]; now: number; balance: number | null }) {
+  if (games.length === 0) {
+    return (
+      <Card title="Predict">
+        <Empty>No games are open right now — check back once your Agent's Admin enables one.</Empty>
+      </Card>
+    );
+  }
+
+  return (
+    <Card
+      title="Predict"
+      desc={
+        balance !== null
+          ? `Spendable: ${balance.toLocaleString()} tokens (main first, then winnings)`
+          : undefined
+      }
+    >
+      <div className="game-grid">
+        {games.map((g) => {
+          const st = gameState(g, now);
+          return (
+            <Link key={g.gameId} to={`/predict/${g.gameId}`} className={`game-card game-card--${st}`}>
+              <div className="game-card__name">{g.name}</div>
+              <div className="game-card__meta">
+                {g.minStake.toLocaleString()}–{g.maxStake.toLocaleString()} tokens
+              </div>
+              <div className={`game-card__status game-card__status--${st}`}>
+                {st === 'open' && `Open · closes in ${formatDuration(msRemaining(g.closesAt, now))}`}
+                {st === 'upcoming' && `Opens in ${formatDuration(msRemaining(g.opensAt, now))}`}
+                {st === 'closed' && 'Closed for today'}
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
+/** The single-game betting page, reached by picking a card on the home
+ *  screen (or a direct/bookmarked link to /predict/:gameId). */
+function GameBetForm({
+  games,
+  now,
+  balance,
+  setBalance,
+  onPlaced,
+}: {
+  games: ActiveGame[];
+  now: number;
+  balance: number | null;
+  setBalance: (n: number) => void;
+  onPlaced?: () => void;
+}) {
+  const { gameId } = useParams<{ gameId: string }>();
+  const navigate = useNavigate();
+  const game = games.find((g) => g.gameId === gameId) ?? null;
   const state = game ? gameState(game, now) : null;
 
+  const [selectedType, setSelectedType] = useState<PredictionType>('OPEN_SINGLE');
+  const [pickedNumber, setPickedNumber] = useState('');
+  const [stake, setStake] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [okMessage, setOkMessage] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
   const typeStates = useMemo(() => {
-    if (!game) return new Map<PredictionType, number>();
     const map = new Map<PredictionType, number>();
-    for (const t of ALL_TYPES) {
-      map.set(t, msRemaining(game.cutoffs[t], now));
-    }
+    if (!game) return map;
+    for (const t of ALL_TYPES) map.set(t, msRemaining(game.cutoffs[t], now));
     return map;
   }, [game, now]);
 
@@ -132,6 +203,21 @@ export function PredictForm({ onPlaced }: { onPlaced?: () => void }) {
     if (nextOpen) setSelectedType(nextOpen);
   }, [game, selectedType, typeStates]);
 
+  if (!game) {
+    return (
+      <Card title="Predict">
+        <Alert tone="error">
+          That game isn't in today's list — it may have been disabled, or the link is stale.
+        </Alert>
+        <div style={{ marginTop: 12 }}>
+          <Link to="/" className="btn btn--ghost">
+            ← Back to games
+          </Link>
+        </div>
+      </Card>
+    );
+  }
+
   const formatError = pickedNumber ? validatePickedNumber(selectedType, pickedNumber) : null;
   const selectedRemaining = typeStates.get(selectedType) ?? 0;
   const isClosedForType = selectedRemaining <= 0;
@@ -140,11 +226,11 @@ export function PredictForm({ onPlaced }: { onPlaced?: () => void }) {
   const stakeInvalid = Boolean(
     stake.trim() === '' ||
       !Number.isInteger(stakeNum) ||
-      (game && (stakeNum < game.minStake || stakeNum > game.maxStake)),
+      stakeNum < game.minStake ||
+      stakeNum > game.maxStake,
   );
 
-  const canSubmit =
-    Boolean(game) && state === 'open' && !isClosedForType && !formatError && pickedNumber !== '' && !stakeInvalid;
+  const canSubmit = state === 'open' && !isClosedForType && !formatError && pickedNumber !== '' && !stakeInvalid;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -173,56 +259,24 @@ export function PredictForm({ onPlaced }: { onPlaced?: () => void }) {
     }
   }
 
-  if (loading) return <Empty>Loading games…</Empty>;
-  if (loadError) return <Alert tone="error">{loadError}</Alert>;
-
-  if (games.length === 0) {
-    return (
-      <Card title="Predict">
-        <Empty>No games are open right now — check back once your Agent's Admin enables one.</Empty>
-      </Card>
-    );
-  }
-
-  const openRemaining = game ? msRemaining(game.cutoffs.OPEN_SINGLE, now) : 0;
-  const closeRemaining = game ? msRemaining(game.cutoffs.CLOSE_SINGLE, now) : 0;
+  const openRemaining = msRemaining(game.cutoffs.OPEN_SINGLE, now);
+  const closeRemaining = msRemaining(game.cutoffs.CLOSE_SINGLE, now);
 
   return (
     <Card
-      title="Predict"
+      title={game.name}
       desc={
         balance !== null
           ? `Spendable: ${balance.toLocaleString()} tokens (main first, then winnings)`
           : undefined
       }
+      action={
+        <button type="button" className="btn btn--ghost btn--sm" onClick={() => navigate('/')}>
+          ← All games
+        </button>
+      }
     >
-      <div className="game-grid">
-        {games.map((g) => {
-          const st = gameState(g, now);
-          const selected = g.gameId === selectedGameId;
-          return (
-            <button
-              key={g.gameId}
-              type="button"
-              className={`game-card game-card--${st}${selected ? ' game-card--selected' : ''}`}
-              onClick={() => setSelectedGameId(g.gameId)}
-              aria-pressed={selected}
-            >
-              <div className="game-card__name">{g.name}</div>
-              <div className="game-card__meta">
-                {g.minStake.toLocaleString()}–{g.maxStake.toLocaleString()} tokens
-              </div>
-              <div className={`game-card__status game-card__status--${st}`}>
-                {st === 'open' && `Open · closes in ${formatDuration(msRemaining(g.closesAt, now))}`}
-                {st === 'upcoming' && `Opens in ${formatDuration(msRemaining(g.opensAt, now))}`}
-                {st === 'closed' && 'Closed for today'}
-              </div>
-            </button>
-          );
-        })}
-      </div>
-
-      {game && state !== 'open' && (
+      {state !== 'open' && (
         <Alert tone={state === 'upcoming' ? 'info' : 'error'}>
           {state === 'upcoming'
             ? `${game.name} opens at ${new Date(game.opensAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`
@@ -230,7 +284,7 @@ export function PredictForm({ onPlaced }: { onPlaced?: () => void }) {
         </Alert>
       )}
 
-      {game && state === 'open' && (
+      {state === 'open' && (
         <form onSubmit={submit}>
           {error && <Alert tone="error">{error}</Alert>}
           {okMessage && <Alert tone="success">{okMessage}</Alert>}
@@ -282,7 +336,7 @@ export function PredictForm({ onPlaced }: { onPlaced?: () => void }) {
 
             <Field
               label="Stake"
-              hint={game ? `Between ${game.minStake} and ${game.maxStake}` : undefined}
+              hint={`Between ${game.minStake} and ${game.maxStake}`}
               hintTone={stake && stakeInvalid ? 'bad' : undefined}
             >
               <input
@@ -290,7 +344,7 @@ export function PredictForm({ onPlaced }: { onPlaced?: () => void }) {
                 inputMode="numeric"
                 value={stake}
                 onChange={(e) => setStake(e.target.value)}
-                placeholder={game ? String(game.minStake) : ''}
+                placeholder={String(game.minStake)}
                 aria-invalid={Boolean(stake) && stakeInvalid}
               />
             </Field>
