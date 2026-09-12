@@ -13,6 +13,14 @@ import { Alert, Button, Card, Empty, Field } from './ui';
 
 const ALL_TYPES: PredictionType[] = [...OPEN_CUTOFF_TYPES, ...CLOSE_CUTOFF_TYPES];
 
+type GameState = 'upcoming' | 'open' | 'closed';
+
+function gameState(g: ActiveGame, now: number): GameState {
+  if (now < new Date(g.opensAt).getTime()) return 'upcoming';
+  if (now >= new Date(g.closesAt).getTime()) return 'closed';
+  return 'open';
+}
+
 function msRemaining(iso: string, now: number): number {
   return new Date(iso).getTime() - now;
 }
@@ -25,6 +33,18 @@ function formatRemaining(ms: number): string {
   return `${m}m ${String(s).padStart(2, '0')}s`;
 }
 
+/** Same idea as formatRemaining but readable at hour scale — used on the
+ *  game cards, where "opens in 3h" beats "opens in 180m 00s". */
+function formatDuration(ms: number): string {
+  if (ms <= 0) return 'now';
+  const totalMinutes = Math.floor(ms / 60000);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  const s = Math.floor((ms % 60000) / 1000);
+  return `${m}m ${String(s).padStart(2, '0')}s`;
+}
+
 // The Player's betting UI — the third, independent layer of the
 // triple-layer cutoff/format check (a Go-service check and a DB
 // trigger/CHECK constraint are the other two; see ARCHITECTURE.md and
@@ -32,6 +52,11 @@ function formatRemaining(ms: number): string {
 // enabled, today's round, live per-side countdowns, and the odds that will
 // actually apply — pulled from prediction-service/Go, which already
 // resolves all of that server-side.
+//
+// This is also the Player app's home screen — games are shown as a grid of
+// cards rather than a dropdown so the day's whole schedule (what's open,
+// what's still to come, what's already closed) is visible at a glance
+// before picking one.
 export function PredictForm({ onPlaced }: { onPlaced?: () => void }) {
   const { user } = useAuth();
   const [games, setGames] = useState<ActiveGame[]>([]);
@@ -59,7 +84,14 @@ export function PredictForm({ onPlaced }: { onPlaced?: () => void }) {
       // winnings, so what matters here is the combined figure.
       if (me) setBalance(me.balance + me.winningsBalance);
       setLoadError(null);
-      setSelectedGameId((prev) => (activeGames.some((g) => g.gameId === prev) ? prev : (activeGames[0]?.gameId ?? '')));
+      setSelectedGameId((prev) => {
+        if (activeGames.some((g) => g.gameId === prev)) return prev;
+        // Default to the first game that's actually open, not just the
+        // first in the list — an upcoming or already-closed game first
+        // alphabetically shouldn't land the Player on a dead form.
+        const firstOpen = activeGames.find((g) => gameState(g, Date.now()) === 'open');
+        return (firstOpen ?? activeGames[0])?.gameId ?? '';
+      });
     } catch (e) {
       setLoadError(e instanceof ApiError ? e.message : String(e));
     } finally {
@@ -79,6 +111,7 @@ export function PredictForm({ onPlaced }: { onPlaced?: () => void }) {
   }, []);
 
   const game = games.find((g) => g.gameId === selectedGameId) ?? null;
+  const state = game ? gameState(game, now) : null;
 
   const typeStates = useMemo(() => {
     if (!game) return new Map<PredictionType, number>();
@@ -110,7 +143,8 @@ export function PredictForm({ onPlaced }: { onPlaced?: () => void }) {
       (game && (stakeNum < game.minStake || stakeNum > game.maxStake)),
   );
 
-  const canSubmit = Boolean(game) && !isClosedForType && !formatError && pickedNumber !== '' && !stakeInvalid;
+  const canSubmit =
+    Boolean(game) && state === 'open' && !isClosedForType && !formatError && pickedNumber !== '' && !stakeInvalid;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -162,91 +196,111 @@ export function PredictForm({ onPlaced }: { onPlaced?: () => void }) {
           : undefined
       }
     >
-      <form onSubmit={submit}>
-        {error && <Alert tone="error">{error}</Alert>}
-        {okMessage && <Alert tone="success">{okMessage}</Alert>}
+      <div className="game-grid">
+        {games.map((g) => {
+          const st = gameState(g, now);
+          const selected = g.gameId === selectedGameId;
+          return (
+            <button
+              key={g.gameId}
+              type="button"
+              className={`game-card game-card--${st}${selected ? ' game-card--selected' : ''}`}
+              onClick={() => setSelectedGameId(g.gameId)}
+              aria-pressed={selected}
+            >
+              <div className="game-card__name">{g.name}</div>
+              <div className="game-card__meta">
+                {g.minStake.toLocaleString()}–{g.maxStake.toLocaleString()} tokens
+              </div>
+              <div className={`game-card__status game-card__status--${st}`}>
+                {st === 'open' && `Open · closes in ${formatDuration(msRemaining(g.closesAt, now))}`}
+                {st === 'upcoming' && `Opens in ${formatDuration(msRemaining(g.opensAt, now))}`}
+                {st === 'closed' && 'Closed for today'}
+              </div>
+            </button>
+          );
+        })}
+      </div>
 
-        <Field label="Game">
-          <select
-            className="select"
-            value={selectedGameId}
-            onChange={(e) => setSelectedGameId(e.target.value)}
-          >
-            {games.map((g) => (
-              <option key={g.gameId} value={g.gameId}>
-                {g.name}
-              </option>
-            ))}
-          </select>
-        </Field>
+      {game && state !== 'open' && (
+        <Alert tone={state === 'upcoming' ? 'info' : 'error'}>
+          {state === 'upcoming'
+            ? `${game.name} opens at ${new Date(game.opensAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`
+            : `${game.name} is closed for today — check back tomorrow.`}
+        </Alert>
+      )}
 
-        {game && (
+      {game && state === 'open' && (
+        <form onSubmit={submit}>
+          {error && <Alert tone="error">{error}</Alert>}
+          {okMessage && <Alert tone="success">{okMessage}</Alert>}
+
           <div className="note" style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
             <span>Open bets close in: {formatRemaining(openRemaining)}</span>
             <span>Close bets close in: {formatRemaining(closeRemaining)}</span>
           </div>
-        )}
 
-        <Field label="Bet type">
-          <select
-            className="select"
-            value={selectedType}
-            onChange={(e) => setSelectedType(e.target.value as PredictionType)}
-          >
-            <optgroup label="Open">
-              {OPEN_CUTOFF_TYPES.map((t) => (
-                <option key={t} value={t} disabled={(typeStates.get(t) ?? 0) <= 0}>
-                  {PREDICTION_TYPE_LABEL[t]} {(typeStates.get(t) ?? 0) <= 0 ? '(closed)' : ''}
-                </option>
-              ))}
-            </optgroup>
-            <optgroup label="Close">
-              {CLOSE_CUTOFF_TYPES.map((t) => (
-                <option key={t} value={t} disabled={(typeStates.get(t) ?? 0) <= 0}>
-                  {PREDICTION_TYPE_LABEL[t]} {(typeStates.get(t) ?? 0) <= 0 ? '(closed)' : ''}
-                </option>
-              ))}
-            </optgroup>
-          </select>
-        </Field>
-
-        {isClosedForType && <Alert tone="error">Betting for this type has closed.</Alert>}
-
-        <div className="form-row">
-          <Field
-            label="Your pick"
-            hint={formatError ?? `e.g. ${PICKED_NUMBER_PLACEHOLDER[selectedType]}`}
-            hintTone={formatError ? 'bad' : undefined}
-          >
-            <input
-              className="input"
-              value={pickedNumber}
-              onChange={(e) => setPickedNumber(e.target.value.trim())}
-              placeholder={PICKED_NUMBER_PLACEHOLDER[selectedType]}
-              aria-invalid={Boolean(formatError)}
-            />
+          <Field label="Bet type">
+            <select
+              className="select"
+              value={selectedType}
+              onChange={(e) => setSelectedType(e.target.value as PredictionType)}
+            >
+              <optgroup label="Open">
+                {OPEN_CUTOFF_TYPES.map((t) => (
+                  <option key={t} value={t} disabled={(typeStates.get(t) ?? 0) <= 0}>
+                    {PREDICTION_TYPE_LABEL[t]} {(typeStates.get(t) ?? 0) <= 0 ? '(closed)' : ''}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="Close">
+                {CLOSE_CUTOFF_TYPES.map((t) => (
+                  <option key={t} value={t} disabled={(typeStates.get(t) ?? 0) <= 0}>
+                    {PREDICTION_TYPE_LABEL[t]} {(typeStates.get(t) ?? 0) <= 0 ? '(closed)' : ''}
+                  </option>
+                ))}
+              </optgroup>
+            </select>
           </Field>
 
-          <Field
-            label="Stake"
-            hint={game ? `Between ${game.minStake} and ${game.maxStake}` : undefined}
-            hintTone={stake && stakeInvalid ? 'bad' : undefined}
-          >
-            <input
-              className="input"
-              inputMode="numeric"
-              value={stake}
-              onChange={(e) => setStake(e.target.value)}
-              placeholder={game ? String(game.minStake) : ''}
-              aria-invalid={Boolean(stake) && stakeInvalid}
-            />
-          </Field>
-        </div>
+          {isClosedForType && <Alert tone="error">Betting for this type has closed.</Alert>}
 
-        <Button type="submit" variant="primary" disabled={!canSubmit || submitting}>
-          {submitting ? 'Placing…' : 'Place prediction'}
-        </Button>
-      </form>
+          <div className="form-row">
+            <Field
+              label="Your pick"
+              hint={formatError ?? `e.g. ${PICKED_NUMBER_PLACEHOLDER[selectedType]}`}
+              hintTone={formatError ? 'bad' : undefined}
+            >
+              <input
+                className="input"
+                value={pickedNumber}
+                onChange={(e) => setPickedNumber(e.target.value.trim())}
+                placeholder={PICKED_NUMBER_PLACEHOLDER[selectedType]}
+                aria-invalid={Boolean(formatError)}
+              />
+            </Field>
+
+            <Field
+              label="Stake"
+              hint={game ? `Between ${game.minStake} and ${game.maxStake}` : undefined}
+              hintTone={stake && stakeInvalid ? 'bad' : undefined}
+            >
+              <input
+                className="input"
+                inputMode="numeric"
+                value={stake}
+                onChange={(e) => setStake(e.target.value)}
+                placeholder={game ? String(game.minStake) : ''}
+                aria-invalid={Boolean(stake) && stakeInvalid}
+              />
+            </Field>
+          </div>
+
+          <Button type="submit" variant="primary" disabled={!canSubmit || submitting}>
+            {submitting ? 'Placing…' : 'Place prediction'}
+          </Button>
+        </form>
+      )}
     </Card>
   );
 }
