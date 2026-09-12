@@ -19,6 +19,7 @@ export function GamesManagementCard() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -46,7 +47,18 @@ export function GamesManagementCard() {
 
   return (
     <>
-      <CreateGameForm onCreated={() => void load()} />
+      {showCreate ? (
+        <CreateGameForm
+          onCreated={() => void load()}
+          onCancel={() => setShowCreate(false)}
+        />
+      ) : (
+        <Card title="Create a game" desc="A recurring daily open/close time, entered once.">
+          <Button variant="primary" onClick={() => setShowCreate(true)}>
+            + Create a game
+          </Button>
+        </Card>
+      )}
 
       <Card
         title="Games"
@@ -212,7 +224,7 @@ function HolidaysEditor({ game, onChanged }: { game: Game; onChanged: () => void
   );
 }
 
-function CreateGameForm({ onCreated }: { onCreated: () => void }) {
+function CreateGameForm({ onCreated, onCancel }: { onCreated: () => void; onCancel: () => void }) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [openTime, setOpenTime] = useState('10:00');
@@ -346,9 +358,14 @@ function CreateGameForm({ onCreated }: { onCreated: () => void }) {
           </Field>
         </div>
 
-        <Button type="submit" variant="primary" disabled={submitting}>
-          {submitting ? 'Creating…' : 'Create game'}
-        </Button>
+        <div className="btn-row">
+          <Button type="submit" variant="primary" disabled={submitting}>
+            {submitting ? 'Creating…' : 'Create game'}
+          </Button>
+          <Button type="button" onClick={onCancel}>
+            Cancel
+          </Button>
+        </div>
       </form>
     </Card>
   );
