@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import type { SessionInfo, StatusImpact, UserSummary } from '../lib/types';
@@ -47,6 +47,24 @@ export function UserTable({
   // that shows the real blast radius first — see ConfirmStatusDialog.
   const [pending, setPending] = useState<{ id: string; impact: StatusImpact } | null>(null);
   const [confirmBusy, setConfirmBusy] = useState(false);
+  const [query, setQuery] = useState('');
+
+  // Client-side, over whatever `users` this table was already handed — every
+  // caller fetches its whole visible slice up front (see each Dashboard's
+  // `load()`), so there's no extra round-trip to filter one. Matches
+  // username, email (which doubles as a phone number since account creation
+  // accepts either — see CreateUserDto.IsEmailOrPhone), or id, so this
+  // covers "find this player by their phone number" without a dedicated field.
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return users;
+    return users.filter(
+      (u) =>
+        u.username.toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q) ||
+        u.id.toLowerCase().includes(q),
+    );
+  }, [users, query]);
 
   async function run(id: string, fn: () => Promise<unknown>) {
     setBusyId(id);
@@ -115,6 +133,18 @@ export function UserTable({
       {users.length === 0 ? (
         <Empty>No accounts yet.</Empty>
       ) : (
+        <>
+          <div style={{ padding: '0 16px 12px' }}>
+            <input
+              className="input"
+              placeholder="Search by username, email, or phone"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </div>
+          {filtered.length === 0 ? (
+            <Empty>No accounts match "{query}".</Empty>
+          ) : (
         <TableWrap>
           <thead>
             <tr>
@@ -128,7 +158,7 @@ export function UserTable({
             </tr>
           </thead>
           <tbody>
-            {users.map((u) => (
+            {filtered.map((u) => (
               // Fragment (not <>) so the key lives on the wrapper — a row can
               // expand into a second <tr> for its sessions.
               <Fragment key={u.id}>
@@ -230,6 +260,8 @@ export function UserTable({
             ))}
           </tbody>
         </TableWrap>
+          )}
+        </>
       )}
 
       {pending && (
