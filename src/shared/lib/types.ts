@@ -456,6 +456,10 @@ export interface ActiveGame {
   opensAt: string;
   closesAt: string;
   cutoffs: Record<PredictionType, string>;
+  /** Today's result, entered by Platform Admin after the round closes.
+   *  Both null until then; closePana can lag openPana by hours. */
+  openPana: string | null;
+  closePana: string | null;
 }
 
 /** Blast radius of toggling an account's status, shown before confirming. */

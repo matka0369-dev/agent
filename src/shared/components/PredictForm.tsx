@@ -128,9 +128,31 @@ function clockTime(iso: string): string {
   return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
+/** Digit-sum of a pana, mod 10 — the "single"/ank. Mirrors core-service's
+ *  singleFromPana (result-derivation.ts); duplicated rather than shared
+ *  since this is the only place the Player app needs it. */
+function singleFromPana(pana: string): number {
+  return [...pana].reduce((sum, d) => sum + Number(d), 0) % 10;
+}
+
+/** "123-65-456" (open pana - jodi - close pana), each segment placeheld
+ *  with dashes until Platform Admin enters that side of the result. The
+ *  jodi itself only ever appears once both panas are in — it's derived
+ *  from both, not knowable from either alone. */
+function formatResult(g: ActiveGame): string {
+  const open = g.openPana ?? '---';
+  const close = g.closePana ?? '---';
+  const jodi =
+    g.openPana && g.closePana
+      ? `${singleFromPana(g.openPana)}${singleFromPana(g.closePana)}`
+      : '--';
+  return `${open}-${jodi}-${close}`;
+}
+
 function GameTile({ g, now }: { g: ActiveGame; now: number }) {
   const st = gameState(g, now);
   const night = isNightGame(g.opensAt);
+  const hasResult = Boolean(g.openPana || g.closePana);
   return (
     <Link to={`/predict/${g.gameId}`} className={`game-card game-card--${st}`}>
       {/* Purely decorative, first in the DOM so the plain-flow text below
@@ -139,14 +161,14 @@ function GameTile({ g, now }: { g: ActiveGame; now: number }) {
         {night ? '🌙' : '☀️'}
       </span>
       <div className="game-card__name">{g.name}</div>
-      <div className="game-card__meta">
-        {g.minStake.toLocaleString()}–{g.maxStake.toLocaleString()} tokens
-      </div>
       {/* Both timings, always — the status line below already narrates
           "opens in"/"closes in" relative to now, but the actual clock
           times are what someone planning around this game wants first. */}
       <div className="game-card__times">
         {clockTime(g.opensAt)} – {clockTime(g.closesAt)}
+      </div>
+      <div className={`game-card__result${hasResult ? ' game-card__result--declared' : ''}`}>
+        {formatResult(g)}
       </div>
       <div className={`game-card__status game-card__status--${st}`}>
         {st === 'open' && `Open · closes in ${formatDuration(msRemaining(g.closesAt, now))}`}
