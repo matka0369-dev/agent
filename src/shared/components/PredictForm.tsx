@@ -230,7 +230,12 @@ function GameBetForm({
       stakeNum > game.maxStake,
   );
 
-  const canSubmit = state === 'open' && !isClosedForType && !formatError && pickedNumber !== '' && !stakeInvalid;
+  // Whether *any* type still has a live cutoff — not the same question as
+  // the card's upcoming/open/closed state (see below). A round is only
+  // truly done once every type's own cutoff has passed.
+  const anyTypeOpen = ALL_TYPES.some((t) => (typeStates.get(t) ?? 0) > 0);
+
+  const canSubmit = !isClosedForType && !formatError && pickedNumber !== '' && !stakeInvalid;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -276,15 +281,26 @@ function GameBetForm({
         </button>
       }
     >
-      {state !== 'open' && (
-        <Alert tone={state === 'upcoming' ? 'info' : 'error'}>
-          {state === 'upcoming'
-            ? `${game.name} opens at ${new Date(game.opensAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`
-            : `${game.name} is closed for today — check back tomorrow.`}
+      {!anyTypeOpen && (
+        <Alert tone="error">{game.name} is closed for today — check back tomorrow.</Alert>
+      )}
+
+      {/* Informational only — never blocks the form below it. Open/Jodi/
+          Sangam bets are on the *open* declaration and close a minute
+          before this game's open time, so they're placeable right now,
+          before the round has "opened"; Close bets stay open separately
+          until a minute before close. There's no window where the card
+          shows "upcoming" and the form is correctly hidden — only "closed"
+          (every type's cutoff has passed) actually means no more betting. */}
+      {state === 'upcoming' && anyTypeOpen && (
+        <Alert tone="info">
+          {game.name}'s open declaration is at{' '}
+          {new Date(game.opensAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} —
+          Open/Jodi/Sangam bets close a minute before that; Close bets stay open separately.
         </Alert>
       )}
 
-      {state === 'open' && (
+      {anyTypeOpen && (
         <form onSubmit={submit}>
           {error && <Alert tone="error">{error}</Alert>}
           {okMessage && <Alert tone="success">{okMessage}</Alert>}
