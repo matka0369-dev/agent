@@ -232,6 +232,30 @@ h3 {
   font-weight: 600;
 }
 
+/* Player-only: their own spendable balance, always visible regardless of
+   which tab they're on. */
+.topbar__purse {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent-text);
+  background: var(--accent-soft);
+  border-radius: 999px;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+.topbar__lang-select {
+  font-size: 0.8rem;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+
 /* ---------- Body / sidebar layout ---------- */
 
 .body {

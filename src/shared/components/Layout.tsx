@@ -1,8 +1,16 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useAuth } from '../auth/AuthContext';
+import { api } from '../lib/api';
+import { LANGUAGES, useLang } from '../lib/i18n';
 import { ACCOUNT_TYPE_LABEL, PORTALS } from '../lib/types';
 import { Button } from './ui';
 import { TabContext } from './tab-context';
+
+// How often the header re-reads a Player's own balance. Independent of
+// whatever any given tab is doing — the header persists across tab
+// switches, so it polls on its own rather than relying on some other
+// component's fetch to keep it current.
+const PURSE_POLL_MS = 20_000;
 
 export type NavItem = { id: string; label: string };
 
@@ -40,9 +48,33 @@ export function Layout({
   onSelectTab?: (id: string) => void;
 }) {
   const { user, logout } = useAuth();
+  const { lang, setLang, t } = useLang();
   const [menuOpen, setMenuOpen] = useState(false);
   const [internalActiveId, setInternalActiveId] = useState<string | undefined>(nav?.[0]?.id);
   const activeId = controlledActiveId ?? internalActiveId;
+  // Spendable total only — the same figure PredictForm bets against (main
+  // wallet first, then winnings). Only a Player has a personal purse to show
+  // here; every other tier's "balance" is subtree accounting, not a wallet.
+  const [purse, setPurse] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!user || user.accountType !== 'PLAYER') return;
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const me = await api.getUser(user.id);
+        if (!cancelled) setPurse(me.balance + me.winningsBalance);
+      } catch {
+        // Transient — the header just keeps showing the last known figure.
+      }
+    };
+    void load();
+    const timer = setInterval(() => void load(), PURSE_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [user]);
 
   // If `nav` changes shape (a permission-gated tab appears/disappears) and
   // the currently active id is no longer in it, fall back to the first tab
@@ -89,14 +121,41 @@ export function Layout({
         )}
         <div className="topbar__mark">P</div>
         <span className="topbar__title">
-          PredictSim <span className="topbar__portal">{PORTALS[user.accountType].name}</span>
+          PredictSim
+          {/* Every other tier is staff — worth reminding them which console
+              they're in. A Player is a player website's actual audience,
+              and being told that on every screen adds nothing for them. */}
+          {user.accountType !== 'PLAYER' && (
+            <span className="topbar__portal">{PORTALS[user.accountType].name}</span>
+          )}
         </span>
         <div className="topbar__spacer" />
         <div className="topbar__who">
+          {user.accountType === 'PLAYER' && (
+            <>
+              {purse !== null && (
+                <span className="topbar__purse" title={t('header.purseTitle', 'Spendable balance')}>
+                  👛 {purse.toLocaleString()}
+                </span>
+              )}
+              <select
+                className="topbar__lang-select"
+                aria-label={t('header.language', 'Language')}
+                value={lang}
+                onChange={(e) => setLang(e.target.value as (typeof LANGUAGES)[number]['code'])}
+              >
+                {LANGUAGES.map((l) => (
+                  <option key={l.code} value={l.code}>
+                    {l.label}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
           <span className="badge">{ACCOUNT_TYPE_LABEL[user.accountType]}</span>
           <span className="topbar__user">{user.username}</span>
           <Button size="sm" onClick={() => void logout()}>
-            Sign out
+            {t('header.signOut', 'Sign out')}
           </Button>
         </div>
       </header>
