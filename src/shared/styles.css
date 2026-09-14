@@ -506,6 +506,27 @@ h3 {
 
 /* ---------- Game cards (Player's Predict home) ---------- */
 
+/* Day/Night section heading — a small label over a rule, the same "quiet
+   divider" idea as .type-chip-group__label but with a line so two grids
+   stacked read as separate groups, not one that happens to have a caption. */
+.game-section-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-subtle);
+  font-weight: 600;
+  margin: 4px 0 10px;
+}
+.game-section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
 .game-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -630,6 +651,33 @@ h3 {
   color: var(--text-subtle);
   border-color: var(--surface-2);
   cursor: not-allowed;
+}
+
+/* Live countdown for whichever bet type is currently selected — ticks every
+   second alongside the chips above it, so the window that actually governs
+   the Place-prediction button is never just "one of the two lines up top". */
+.predict-countdown {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 14px;
+  font-size: 0.86rem;
+  background: var(--surface-2);
+  color: var(--text);
+}
+.predict-countdown__time {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.predict-countdown--warn {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+.predict-countdown--closed {
+  background: var(--danger-bg);
+  color: var(--danger);
 }
 
 /* ---------- Form ---------- */

@@ -46,6 +46,13 @@ function formatDuration(ms: number): string {
   return `${m}m ${String(s).padStart(2, '0')}s`;
 }
 
+/** Day vs Night, split at 6pm by open time — read in the viewer's own local
+ *  time (every game here runs on Asia/Kolkata anyway, and that's who's
+ *  looking at this screen). */
+function isNightGame(opensAtIso: string): boolean {
+  return new Date(opensAtIso).getHours() >= 18;
+}
+
 /**
  * The Player's betting flow, split across two routes so picking a game is a
  * real navigation rather than a selection sitting on the home screen:
@@ -117,8 +124,27 @@ export function PredictForm({ onPlaced }: { onPlaced?: () => void }) {
   );
 }
 
+function GameTile({ g, now }: { g: ActiveGame; now: number }) {
+  const st = gameState(g, now);
+  return (
+    <Link to={`/predict/${g.gameId}`} className={`game-card game-card--${st}`}>
+      <div className="game-card__name">{g.name}</div>
+      <div className="game-card__meta">
+        {g.minStake.toLocaleString()}–{g.maxStake.toLocaleString()} tokens
+      </div>
+      <div className={`game-card__status game-card__status--${st}`}>
+        {st === 'open' && `Open · closes in ${formatDuration(msRemaining(g.closesAt, now))}`}
+        {st === 'upcoming' && `Opens in ${formatDuration(msRemaining(g.opensAt, now))}`}
+        {st === 'closed' && 'Closed for today'}
+      </div>
+    </Link>
+  );
+}
+
 /** Home screen: browse the day's games, pick one to bet on. No form here on
- *  purpose — placing a prediction happens on its own page. */
+ *  purpose — placing a prediction happens on its own page. Split into Day
+ *  and Night sections at 6pm open time — the two halves of the real
+ *  schedule, and a long flat grid of 20 games is hard to scan otherwise. */
 function GamesHome({ games, now, balance }: { games: ActiveGame[]; now: number; balance: number | null }) {
   if (games.length === 0) {
     return (
@@ -127,6 +153,9 @@ function GamesHome({ games, now, balance }: { games: ActiveGame[]; now: number; 
       </Card>
     );
   }
+
+  const dayGames = games.filter((g) => !isNightGame(g.opensAt));
+  const nightGames = games.filter((g) => isNightGame(g.opensAt));
 
   return (
     <Card
@@ -137,24 +166,27 @@ function GamesHome({ games, now, balance }: { games: ActiveGame[]; now: number; 
           : undefined
       }
     >
-      <div className="game-grid">
-        {games.map((g) => {
-          const st = gameState(g, now);
-          return (
-            <Link key={g.gameId} to={`/predict/${g.gameId}`} className={`game-card game-card--${st}`}>
-              <div className="game-card__name">{g.name}</div>
-              <div className="game-card__meta">
-                {g.minStake.toLocaleString()}–{g.maxStake.toLocaleString()} tokens
-              </div>
-              <div className={`game-card__status game-card__status--${st}`}>
-                {st === 'open' && `Open · closes in ${formatDuration(msRemaining(g.closesAt, now))}`}
-                {st === 'upcoming' && `Opens in ${formatDuration(msRemaining(g.opensAt, now))}`}
-                {st === 'closed' && 'Closed for today'}
-              </div>
-            </Link>
-          );
-        })}
-      </div>
+      {dayGames.length > 0 && (
+        <>
+          <div className="game-section-label">Day</div>
+          <div className="game-grid">
+            {dayGames.map((g) => (
+              <GameTile key={g.gameId} g={g} now={now} />
+            ))}
+          </div>
+        </>
+      )}
+
+      {nightGames.length > 0 && (
+        <>
+          <div className="game-section-label">Night</div>
+          <div className="game-grid">
+            {nightGames.map((g) => (
+              <GameTile key={g.gameId} g={g} now={now} />
+            ))}
+          </div>
+        </>
+      )}
     </Card>
   );
 }
@@ -310,6 +342,27 @@ function GameBetForm({
             <span>Close bets close in: {formatRemaining(closeRemaining)}</span>
           </div>
 
+          {/* The timer that actually matters: whichever type is selected
+              below. Ticks every second (the same `now` driving the chips'
+              disabled state), and is the one thing that decides whether
+              Place prediction is clickable — not the two general lines
+              above, which cover the game as a whole. */}
+          <div
+            className={
+              'predict-countdown' +
+              (isClosedForType
+                ? ' predict-countdown--closed'
+                : selectedRemaining < 60_000
+                  ? ' predict-countdown--warn'
+                  : '')
+            }
+          >
+            <span>{PREDICTION_TYPE_LABEL[selectedType]}:</span>
+            <span className="predict-countdown__time">
+              {isClosedForType ? 'Closed for this round' : `${formatRemaining(selectedRemaining)} left`}
+            </span>
+          </div>
+
           {/* Shown as chips rather than a <select> so every bet type — and
               which of them are still open — is visible at a glance instead
               of hidden behind a dropdown the Player has to open first. */}
@@ -355,8 +408,6 @@ function GameBetForm({
             </div>
           </div>
 
-          {isClosedForType && <Alert tone="error">Betting for this type has closed.</Alert>}
-
           <div className="form-row">
             <Field
               label="Your pick"
@@ -389,7 +440,7 @@ function GameBetForm({
           </div>
 
           <Button type="submit" variant="primary" disabled={!canSubmit || submitting}>
-            {submitting ? 'Placing…' : 'Place prediction'}
+            {submitting ? 'Placing…' : isClosedForType ? 'Time is up for this type' : 'Place prediction'}
           </Button>
         </form>
       )}
