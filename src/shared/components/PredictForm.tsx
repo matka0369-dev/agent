@@ -124,13 +124,29 @@ export function PredictForm({ onPlaced }: { onPlaced?: () => void }) {
   );
 }
 
+function clockTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
 function GameTile({ g, now }: { g: ActiveGame; now: number }) {
   const st = gameState(g, now);
+  const night = isNightGame(g.opensAt);
   return (
     <Link to={`/predict/${g.gameId}`} className={`game-card game-card--${st}`}>
+      {/* Purely decorative, first in the DOM so the plain-flow text below
+          paints over it without needing an explicit z-index. */}
+      <span className="game-card__icon" aria-hidden="true">
+        {night ? '🌙' : '☀️'}
+      </span>
       <div className="game-card__name">{g.name}</div>
       <div className="game-card__meta">
         {g.minStake.toLocaleString()}–{g.maxStake.toLocaleString()} tokens
+      </div>
+      {/* Both timings, always — the status line below already narrates
+          "opens in"/"closes in" relative to now, but the actual clock
+          times are what someone planning around this game wants first. */}
+      <div className="game-card__times">
+        {clockTime(g.opensAt)} – {clockTime(g.closesAt)}
       </div>
       <div className={`game-card__status game-card__status--${st}`}>
         {st === 'open' && `Open · closes in ${formatDuration(msRemaining(g.closesAt, now))}`}
@@ -148,7 +164,7 @@ function GameTile({ g, now }: { g: ActiveGame; now: number }) {
 function GamesHome({ games, now, balance }: { games: ActiveGame[]; now: number; balance: number | null }) {
   if (games.length === 0) {
     return (
-      <Card title="Predict">
+      <Card>
         <Empty>No games are open right now — check back once your Agent's Admin enables one.</Empty>
       </Card>
     );
@@ -158,14 +174,16 @@ function GamesHome({ games, now, balance }: { games: ActiveGame[]; now: number; 
   const nightGames = games.filter((g) => isNightGame(g.opensAt));
 
   return (
-    <Card
-      title="Predict"
-      desc={
-        balance !== null
-          ? `Spendable: ${balance.toLocaleString()} tokens (main first, then winnings)`
-          : undefined
-      }
-    >
+    // No title here on purpose — Layout already drops "Welcome, x" for this
+    // tab (see Dashboard.tsx), and every card now carries its own schedule;
+    // a repeated "Predict" label above them added nothing.
+    <Card>
+      {balance !== null && (
+        <div className="note" style={{ marginBottom: 14 }}>
+          Spendable: {balance.toLocaleString()} tokens (main first, then winnings)
+        </div>
+      )}
+
       {dayGames.length > 0 && (
         <>
           <div className="game-section-label">Day</div>

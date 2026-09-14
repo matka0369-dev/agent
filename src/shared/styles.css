@@ -535,6 +535,8 @@ h3 {
 }
 
 .game-card {
+  position: relative;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -549,6 +551,25 @@ h3 {
   text-decoration: none;
   color: inherit;
   transition: border-color 0.12s, box-shadow 0.12s;
+}
+/* Sun/Moon watermark — day/night at a glance, same split as the section
+   headings above the grid. Absolutely positioned and first in the DOM so
+   the normal-flow text after it paints on top without an explicit z-index;
+   low opacity keeps it decorative rather than competing with the text. */
+.game-card__icon {
+  position: absolute;
+  top: -14px;
+  right: -10px;
+  font-size: 56px;
+  line-height: 1;
+  opacity: 0.16;
+  pointer-events: none;
+  user-select: none;
+}
+.game-card__times {
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
 }
 .game-card:hover,
 .game-card:visited {

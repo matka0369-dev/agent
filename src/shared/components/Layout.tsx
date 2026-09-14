@@ -14,7 +14,11 @@ export function Layout({
   activeId: controlledActiveId,
   onSelectTab,
 }: {
-  title: string;
+  /** Omit (or pass '') to skip the page header entirely — a tab whose own
+   *  content already carries its heading (e.g. Player's Predict, which
+   *  shows each game's own name/schedule) doesn't need "Welcome, x" above it
+   *  too. */
+  title?: string;
   subtitle?: string;
   /**
    * Tabs — each id must match a <Section id="…"> among children. Only the
@@ -128,10 +132,12 @@ export function Layout({
         )}
 
         <main className="page">
-          <div className="page__head">
-            <h1>{title}</h1>
-            {subtitle && <div className="page__sub">{subtitle}</div>}
-          </div>
+          {title && (
+            <div className="page__head">
+              <h1>{title}</h1>
+              {subtitle && <div className="page__sub">{subtitle}</div>}
+            </div>
+          )}
           <div className="grid">
             <TabContext.Provider value={resolvedActiveId}>{children}</TabContext.Provider>
           </div>
