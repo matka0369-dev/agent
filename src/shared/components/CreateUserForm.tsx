@@ -239,15 +239,18 @@ export function CreateUserForm({
             />
           </Field>
 
-          <Field label="Email">
+          <Field label="Email or phone">
             <input
               className="input"
-              type="email"
+              // Not type="email" — the browser's own built-in validation
+              // would reject a phone number before this ever reaches the
+              // server, which now accepts either (see create-user.dto.ts).
+              type="text"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="off"
-              placeholder="jane@example.com"
+              placeholder="jane@example.com or +91 98765 43210"
             />
           </Field>
         </div>
