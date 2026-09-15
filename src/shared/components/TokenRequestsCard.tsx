@@ -1,12 +1,20 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '../lib/api';
-import { TOKEN_REQUEST_KIND_LABEL, type TokenRequest, type TokenRequestKind } from '../lib/types';
+import { tokenRequestKindLabel, useLang } from '../lib/i18n';
+import { type TokenRequest, type TokenRequestKind } from '../lib/types';
 import { Alert, Button, Card, Empty, Field, RefreshButton, TableWrap, formatDate } from './ui';
 
 function statusBadgeClass(status: TokenRequest['status']) {
   if (status === 'APPROVED') return 'badge badge--ok';
   if (status === 'PENDING') return 'badge badge--muted';
   return 'badge badge--off'; // REJECTED, CANCELLED
+}
+
+function statusLabel(t: ReturnType<typeof useLang>['t'], status: TokenRequest['status']): string {
+  if (status === 'APPROVED') return t('requests.statusApproved', 'Approved');
+  if (status === 'PENDING') return t('requests.statusPending', 'Pending');
+  if (status === 'REJECTED') return t('requests.statusRejected', 'Rejected');
+  return t('requests.statusCancelled', 'Cancelled');
 }
 
 /**
@@ -28,6 +36,7 @@ export function TokenRequestsCard({
   winningsBalance: number;
   onChanged?: () => void;
 }) {
+  const { t } = useLang();
   const [requests, setRequests] = useState<TokenRequest[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -71,8 +80,8 @@ export function TokenRequestsCard({
       await api.createTokenRequest({ kind, amount: parsed, note: note.trim() || undefined });
       setOkMessage(
         kind === 'TOP_UP'
-          ? `Asked your Agent for ${parsed.toLocaleString()} tokens.`
-          : `Offered to give up ${parsed.toLocaleString()} tokens.`,
+          ? t('requests.askedAgent', 'Asked your Agent for {n} tokens.', { n: parsed.toLocaleString() })
+          : t('requests.offeredGiveUp', 'Offered to give up {n} tokens.', { n: parsed.toLocaleString() }),
       );
       setAmount('');
       setNote('');
@@ -101,38 +110,36 @@ export function TokenRequestsCard({
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
-      <Card
-        title="Ask for a balance change"
-        desc="Goes to your Agent (top-up) or an Admin (surrender) to review — nothing moves until they approve it."
-      >
+      <Card title={t('requests.title', 'Ask for a balance change')} desc={t('requests.desc', 'Goes to your Agent (top-up) or an Admin (surrender) to review — nothing moves until they approve it.')}>
         <form onSubmit={submit}>
           {error && <Alert tone="error">{error}</Alert>}
           {okMessage && <Alert tone="success">{okMessage}</Alert>}
           {hasOpenOfKind && (
             <Alert tone="info">
-              You already have a pending {TOKEN_REQUEST_KIND_LABEL[kind].toLowerCase()} request —
-              cancel it below before raising another of the same kind.
+              {t('requests.pendingWarning', 'You already have a pending {kind} request — cancel it below before raising another of the same kind.', {
+                kind: tokenRequestKindLabel(t, kind).toLowerCase(),
+              })}
             </Alert>
           )}
 
           <div className="form-row">
-            <Field label="What do you need">
+            <Field label={t('requests.whatDoYouNeed', 'What do you need')}>
               <select
                 className="select"
                 value={kind}
                 onChange={(e) => setKind(e.target.value as TokenRequestKind)}
               >
-                <option value="TOP_UP">More tokens (top-up)</option>
-                <option value="SURRENDER">Give tokens back (surrender)</option>
+                <option value="TOP_UP">{t('requests.topUpOption', 'More tokens (top-up)')}</option>
+                <option value="SURRENDER">{t('requests.surrenderOption', 'Give tokens back (surrender)')}</option>
               </select>
             </Field>
             <Field
-              label="Amount"
+              label={t('predict.stake', 'Amount')}
               hint={
                 overHeld
-                  ? `You only hold ${held.toLocaleString()}.`
+                  ? t('requests.onlyHold', 'You only hold {held}.', { held: held.toLocaleString() })
                   : kind === 'SURRENDER'
-                    ? `You hold ${held.toLocaleString()} across both wallets.`
+                    ? t('requests.holdBoth', 'You hold {held} across both wallets.', { held: held.toLocaleString() })
                     : undefined
               }
               hintTone={overHeld ? 'bad' : undefined}
@@ -148,23 +155,27 @@ export function TokenRequestsCard({
             </Field>
           </div>
 
-          <Field label="Note (optional)">
+          <Field label={t('requests.noteLabel', 'Note (optional)')}>
             <input
               className="input"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder={kind === 'TOP_UP' ? 'Running low' : 'Don’t need these anymore'}
+              placeholder={
+                kind === 'TOP_UP'
+                  ? t('requests.notePlaceholderTopUp', 'Running low')
+                  : t('requests.notePlaceholderSurrender', "Don't need these anymore")
+              }
             />
           </Field>
 
           <Button type="submit" variant="primary" disabled={!canSubmit || submitting}>
-            {submitting ? 'Sending…' : 'Send request'}
+            {submitting ? t('requests.sending', 'Sending…') : t('requests.sendRequest', 'Send request')}
           </Button>
         </form>
       </Card>
 
       <Card
-        title="Your requests"
+        title={t('requests.yourRequestsTitle', 'Your requests')}
         flush
         action={<RefreshButton onClick={() => void load()} refreshing={loading} />}
       >
@@ -174,29 +185,29 @@ export function TokenRequestsCard({
           </div>
         )}
         {loading ? (
-          <Empty>Loading…</Empty>
+          <Empty>{t('common.loading', 'Loading…')}</Empty>
         ) : requests.length === 0 ? (
-          <Empty>No requests yet.</Empty>
+          <Empty>{t('requests.noRequestsYet', 'No requests yet.')}</Empty>
         ) : (
           <TableWrap>
             <thead>
               <tr>
-                <th>Kind</th>
-                <th style={{ textAlign: 'right' }}>Amount</th>
-                <th>Status</th>
-                <th>Note</th>
-                <th>Reviewer note</th>
-                <th>Raised</th>
+                <th>{t('requests.kindColumn', 'Kind')}</th>
+                <th style={{ textAlign: 'right' }}>{t('predict.stake', 'Amount')}</th>
+                <th>{t('requests.statusColumn', 'Status')}</th>
+                <th>{t('requests.noteColumn', 'Note')}</th>
+                <th>{t('requests.reviewerNoteColumn', 'Reviewer note')}</th>
+                <th>{t('requests.raisedColumn', 'Raised')}</th>
                 <th />
               </tr>
             </thead>
             <tbody>
               {requests.map((r) => (
                 <tr key={r.id}>
-                  <td>{TOKEN_REQUEST_KIND_LABEL[r.kind]}</td>
+                  <td>{tokenRequestKindLabel(t, r.kind)}</td>
                   <td className="cell-num">{r.amount.toLocaleString()}</td>
                   <td>
-                    <span className={statusBadgeClass(r.status)}>{r.status}</span>
+                    <span className={statusBadgeClass(r.status)}>{statusLabel(t, r.status)}</span>
                   </td>
                   <td className="cell-muted">{r.note ?? '—'}</td>
                   <td className="cell-muted">{r.resolutionNote ?? '—'}</td>
@@ -208,7 +219,7 @@ export function TokenRequestsCard({
                         onClick={() => void cancel(r.id)}
                         disabled={cancellingId === r.id}
                       >
-                        {cancellingId === r.id ? 'Cancelling…' : 'Cancel'}
+                        {cancellingId === r.id ? t('requests.cancelling', 'Cancelling…') : t('requests.cancel', 'Cancel')}
                       </Button>
                     )}
                   </td>

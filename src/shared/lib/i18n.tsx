@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import { PREDICTION_TYPE_LABEL, type PredictionType } from './types';
+import { PREDICTION_TYPE_LABEL, TOKEN_REQUEST_KIND_LABEL, type PredictionType, type TokenRequestKind } from './types';
 
 /**
  * Player-app localization. Nothing else in this package reads or provides
@@ -114,6 +114,39 @@ const en: Dict = {
   'type.CLOSE_DOUBLE_PANA': 'Double Pana (Close)',
   'type.OPEN_TRIPLE_PANA': 'Triple Pana (Open)',
   'type.CLOSE_TRIPLE_PANA': 'Triple Pana (Close)',
+  'common.loading': 'Loading…',
+  'reqkind.TOP_UP': 'Top-up',
+  'reqkind.SURRENDER': 'Surrender',
+  'requests.title': 'Ask for a balance change',
+  'requests.desc':
+    'Goes to your Agent (top-up) or an Admin (surrender) to review — nothing moves until they approve it.',
+  'requests.pendingWarning':
+    'You already have a pending {kind} request — cancel it below before raising another of the same kind.',
+  'requests.whatDoYouNeed': 'What do you need',
+  'requests.topUpOption': 'More tokens (top-up)',
+  'requests.surrenderOption': 'Give tokens back (surrender)',
+  'requests.onlyHold': 'You only hold {held}.',
+  'requests.holdBoth': 'You hold {held} across both wallets.',
+  'requests.noteLabel': 'Note (optional)',
+  'requests.notePlaceholderTopUp': 'Running low',
+  'requests.notePlaceholderSurrender': "Don't need these anymore",
+  'requests.sending': 'Sending…',
+  'requests.sendRequest': 'Send request',
+  'requests.askedAgent': 'Asked your Agent for {n} tokens.',
+  'requests.offeredGiveUp': 'Offered to give up {n} tokens.',
+  'requests.yourRequestsTitle': 'Your requests',
+  'requests.kindColumn': 'Kind',
+  'requests.statusColumn': 'Status',
+  'requests.noteColumn': 'Note',
+  'requests.reviewerNoteColumn': 'Reviewer note',
+  'requests.raisedColumn': 'Raised',
+  'requests.noRequestsYet': 'No requests yet.',
+  'requests.cancelling': 'Cancelling…',
+  'requests.cancel': 'Cancel',
+  'requests.statusPending': 'Pending',
+  'requests.statusApproved': 'Approved',
+  'requests.statusRejected': 'Rejected',
+  'requests.statusCancelled': 'Cancelled',
 };
 
 const hi: Dict = {
@@ -209,6 +242,39 @@ const hi: Dict = {
   'type.CLOSE_DOUBLE_PANA': 'डबल पाना (क्लोज)',
   'type.OPEN_TRIPLE_PANA': 'ट्रिपल पाना (ओपन)',
   'type.CLOSE_TRIPLE_PANA': 'ट्रिपल पाना (क्लोज)',
+  'common.loading': 'लोड हो रहा है…',
+  'reqkind.TOP_UP': 'टॉप-अप',
+  'reqkind.SURRENDER': 'सरेंडर',
+  'requests.title': 'बैलेंस बदलाव का अनुरोध करें',
+  'requests.desc':
+    'यह आपके एजेंट (टॉप-अप) या एडमिन (सरेंडर) के पास समीक्षा के लिए जाता है — जब तक वे मंज़ूर नहीं करते, कुछ भी नहीं बदलता।',
+  'requests.pendingWarning':
+    'आपका पहले से एक लंबित {kind} अनुरोध है — उसी प्रकार का एक और भेजने से पहले उसे नीचे रद्द करें।',
+  'requests.whatDoYouNeed': 'आपको क्या चाहिए',
+  'requests.topUpOption': 'ज़्यादा टोकन (टॉप-अप)',
+  'requests.surrenderOption': 'टोकन वापस दें (सरेंडर)',
+  'requests.onlyHold': 'आपके पास केवल {held} हैं।',
+  'requests.holdBoth': 'दोनों वॉलेट में मिलाकर आपके पास {held} हैं।',
+  'requests.noteLabel': 'नोट (वैकल्पिक)',
+  'requests.notePlaceholderTopUp': 'कम हो रहे हैं',
+  'requests.notePlaceholderSurrender': 'अब इनकी ज़रूरत नहीं',
+  'requests.sending': 'भेजा जा रहा है…',
+  'requests.sendRequest': 'अनुरोध भेजें',
+  'requests.askedAgent': 'अपने एजेंट से {n} टोकन माँगे।',
+  'requests.offeredGiveUp': '{n} टोकन वापस देने का प्रस्ताव दिया।',
+  'requests.yourRequestsTitle': 'आपके अनुरोध',
+  'requests.kindColumn': 'प्रकार',
+  'requests.statusColumn': 'स्थिति',
+  'requests.noteColumn': 'नोट',
+  'requests.reviewerNoteColumn': 'समीक्षक की टिप्पणी',
+  'requests.raisedColumn': 'भेजा गया',
+  'requests.noRequestsYet': 'अभी तक कोई अनुरोध नहीं।',
+  'requests.cancelling': 'रद्द हो रहा है…',
+  'requests.cancel': 'रद्द करें',
+  'requests.statusPending': 'लंबित',
+  'requests.statusApproved': 'मंज़ूर',
+  'requests.statusRejected': 'अस्वीकृत',
+  'requests.statusCancelled': 'रद्द',
 };
 
 const mr: Dict = {
@@ -304,6 +370,39 @@ const mr: Dict = {
   'type.CLOSE_DOUBLE_PANA': 'डबल पाना (क्लोज)',
   'type.OPEN_TRIPLE_PANA': 'ट्रिपल पाना (ओपन)',
   'type.CLOSE_TRIPLE_PANA': 'ट्रिपल पाना (क्लोज)',
+  'common.loading': 'लोड होत आहे…',
+  'reqkind.TOP_UP': 'टॉप-अप',
+  'reqkind.SURRENDER': 'सरेंडर',
+  'requests.title': 'शिल्लक बदलाची विनंती करा',
+  'requests.desc':
+    'ही तुमच्या एजंटकडे (टॉप-अप) किंवा अ‍ॅडमिनकडे (सरेंडर) पुनरावलोकनासाठी जाते — ते मंजूर करेपर्यंत काहीही बदलत नाही.',
+  'requests.pendingWarning':
+    'तुमची आधीच एक प्रलंबित {kind} विनंती आहे — त्याच प्रकारची आणखी एक पाठवण्यापूर्वी ती खाली रद्द करा.',
+  'requests.whatDoYouNeed': 'तुम्हाला काय हवे आहे',
+  'requests.topUpOption': 'जास्त टोकन्स (टॉप-अप)',
+  'requests.surrenderOption': 'टोकन्स परत करा (सरेंडर)',
+  'requests.onlyHold': 'तुमच्याकडे फक्त {held} आहेत.',
+  'requests.holdBoth': 'दोन्ही वॉलेटमध्ये मिळून तुमच्याकडे {held} आहेत.',
+  'requests.noteLabel': 'नोंद (ऐच्छिक)',
+  'requests.notePlaceholderTopUp': 'कमी होत आहेत',
+  'requests.notePlaceholderSurrender': 'आता यांची गरज नाही',
+  'requests.sending': 'पाठवले जात आहे…',
+  'requests.sendRequest': 'विनंती पाठवा',
+  'requests.askedAgent': 'तुमच्या एजंटकडे {n} टोकन्स मागितले.',
+  'requests.offeredGiveUp': '{n} टोकन्स परत देण्याची ऑफर दिली.',
+  'requests.yourRequestsTitle': 'तुमच्या विनंत्या',
+  'requests.kindColumn': 'प्रकार',
+  'requests.statusColumn': 'स्थिती',
+  'requests.noteColumn': 'नोंद',
+  'requests.reviewerNoteColumn': 'पुनरावलोकनकर्त्याची टिप्पणी',
+  'requests.raisedColumn': 'पाठवले',
+  'requests.noRequestsYet': 'अजून कोणतीही विनंती नाही.',
+  'requests.cancelling': 'रद्द होत आहे…',
+  'requests.cancel': 'रद्द करा',
+  'requests.statusPending': 'प्रलंबित',
+  'requests.statusApproved': 'मंजूर',
+  'requests.statusRejected': 'नाकारले',
+  'requests.statusCancelled': 'रद्द',
 };
 
 const te: Dict = {
@@ -399,6 +498,39 @@ const te: Dict = {
   'type.CLOSE_DOUBLE_PANA': 'డబుల్ పానా (క్లోజ్)',
   'type.OPEN_TRIPLE_PANA': 'ట్రిపుల్ పానా (ఓపెన్)',
   'type.CLOSE_TRIPLE_PANA': 'ట్రిపుల్ పానా (క్లోజ్)',
+  'common.loading': 'లోడ్ అవుతోంది…',
+  'reqkind.TOP_UP': 'టాప్-అప్',
+  'reqkind.SURRENDER': 'సరెండర్',
+  'requests.title': 'బ్యాలెన్స్ మార్పు కోసం అభ్యర్థించండి',
+  'requests.desc':
+    'ఇది మీ ఏజెంట్ (టాప్-అప్) లేదా అడ్మిన్ (సరెండర్) వద్దకు సమీక్ష కోసం వెళుతుంది — వారు ఆమోదించే వరకు ఏమీ మారదు.',
+  'requests.pendingWarning':
+    'మీకు ఇప్పటికే పెండింగ్‌లో ఉన్న {kind} అభ్యర్థన ఉంది — అదే రకమైనది మరొకటి పెట్టే ముందు దాన్ని కింద రద్దు చేయండి.',
+  'requests.whatDoYouNeed': 'మీకు ఏమి కావాలి',
+  'requests.topUpOption': 'ఎక్కువ టోకెన్లు (టాప్-అప్)',
+  'requests.surrenderOption': 'టోకెన్లు తిరిగి ఇవ్వండి (సరెండర్)',
+  'requests.onlyHold': 'మీ వద్ద {held} మాత్రమే ఉన్నాయి.',
+  'requests.holdBoth': 'రెండు వాలెట్లలో కలిపి మీ వద్ద {held} ఉన్నాయి.',
+  'requests.noteLabel': 'గమనిక (ఐచ్ఛికం)',
+  'requests.notePlaceholderTopUp': 'తక్కువగా ఉన్నాయి',
+  'requests.notePlaceholderSurrender': 'ఇక వీటి అవసరం లేదు',
+  'requests.sending': 'పంపుతోంది…',
+  'requests.sendRequest': 'అభ్యర్థన పంపండి',
+  'requests.askedAgent': 'మీ ఏజెంట్‌ను {n} టోకెన్ల కోసం అడిగారు.',
+  'requests.offeredGiveUp': '{n} టోకెన్లు తిరిగి ఇవ్వడానికి ఆఫర్ చేశారు.',
+  'requests.yourRequestsTitle': 'మీ అభ్యర్థనలు',
+  'requests.kindColumn': 'రకం',
+  'requests.statusColumn': 'స్థితి',
+  'requests.noteColumn': 'గమనిక',
+  'requests.reviewerNoteColumn': 'సమీక్షకుడి గమనిక',
+  'requests.raisedColumn': 'పంపబడింది',
+  'requests.noRequestsYet': 'ఇంకా ఏ అభ్యర్థనలు లేవు.',
+  'requests.cancelling': 'రద్దు అవుతోంది…',
+  'requests.cancel': 'రద్దు చేయండి',
+  'requests.statusPending': 'పెండింగ్',
+  'requests.statusApproved': 'ఆమోదించబడింది',
+  'requests.statusRejected': 'తిరస్కరించబడింది',
+  'requests.statusCancelled': 'రద్దు చేయబడింది',
 };
 
 const ta: Dict = {
@@ -495,6 +627,39 @@ const ta: Dict = {
   'type.CLOSE_DOUBLE_PANA': 'டபுள் பானா (க்ளோஸ்)',
   'type.OPEN_TRIPLE_PANA': 'ட்ரிபுள் பானா (ஓப்பன்)',
   'type.CLOSE_TRIPLE_PANA': 'ட்ரிபுள் பானா (க்ளோஸ்)',
+  'common.loading': 'ஏற்றுகிறது…',
+  'reqkind.TOP_UP': 'டாப்-அப்',
+  'reqkind.SURRENDER': 'சரண்டர்',
+  'requests.title': 'இருப்பு மாற்றத்தைக் கோரவும்',
+  'requests.desc':
+    'இது உங்கள் ஏஜெண்டிடம் (டாப்-அப்) அல்லது நிர்வாகியிடம் (சரண்டர்) மதிப்பாய்வுக்குச் செல்கிறது — அவர்கள் அங்கீகரிக்கும் வரை எதுவும் மாறாது.',
+  'requests.pendingWarning':
+    'உங்களுக்கு ஏற்கனவே நிலுவையில் உள்ள {kind} கோரிக்கை உள்ளது — அதே வகையிலான இன்னொன்றை அனுப்பும் முன் அதைக் கீழே ரத்து செய்யவும்.',
+  'requests.whatDoYouNeed': 'உங்களுக்கு என்ன தேவை',
+  'requests.topUpOption': 'கூடுதல் டோக்கன்கள் (டாப்-அப்)',
+  'requests.surrenderOption': 'டோக்கன்களைத் திருப்பிக் கொடுங்கள் (சரண்டர்)',
+  'requests.onlyHold': 'உங்களிடம் {held} மட்டுமே உள்ளன.',
+  'requests.holdBoth': 'இரண்டு வாலட்களிலும் சேர்த்து உங்களிடம் {held} உள்ளன.',
+  'requests.noteLabel': 'குறிப்பு (விருப்பத்தேர்வு)',
+  'requests.notePlaceholderTopUp': 'குறைவாக உள்ளன',
+  'requests.notePlaceholderSurrender': 'இனி தேவையில்லை',
+  'requests.sending': 'அனுப்புகிறது…',
+  'requests.sendRequest': 'கோரிக்கையை அனுப்பவும்',
+  'requests.askedAgent': 'உங்கள் ஏஜெண்டிடம் {n} டோக்கன்களைக் கேட்டீர்கள்.',
+  'requests.offeredGiveUp': '{n} டோக்கன்களைத் திருப்பிக் கொடுக்க முன்வந்தீர்கள்.',
+  'requests.yourRequestsTitle': 'உங்கள் கோரிக்கைகள்',
+  'requests.kindColumn': 'வகை',
+  'requests.statusColumn': 'நிலை',
+  'requests.noteColumn': 'குறிப்பு',
+  'requests.reviewerNoteColumn': 'மதிப்பாய்வாளர் குறிப்பு',
+  'requests.raisedColumn': 'அனுப்பப்பட்டது',
+  'requests.noRequestsYet': 'இதுவரை எந்தக் கோரிக்கையும் இல்லை.',
+  'requests.cancelling': 'ரத்து செய்கிறது…',
+  'requests.cancel': 'ரத்து செய்',
+  'requests.statusPending': 'நிலுவையில்',
+  'requests.statusApproved': 'அங்கீகரிக்கப்பட்டது',
+  'requests.statusRejected': 'நிராகரிக்கப்பட்டது',
+  'requests.statusCancelled': 'ரத்து செய்யப்பட்டது',
 };
 
 const kn: Dict = {
@@ -590,6 +755,39 @@ const kn: Dict = {
   'type.CLOSE_DOUBLE_PANA': 'ಡಬಲ್ ಪಾನಾ (ಕ್ಲೋಸ್)',
   'type.OPEN_TRIPLE_PANA': 'ಟ್ರಿಪಲ್ ಪಾನಾ (ಓಪನ್)',
   'type.CLOSE_TRIPLE_PANA': 'ಟ್ರಿಪಲ್ ಪಾನಾ (ಕ್ಲೋಸ್)',
+  'common.loading': 'ಲೋಡ್ ಆಗುತ್ತಿದೆ…',
+  'reqkind.TOP_UP': 'ಟಾಪ್-ಅಪ್',
+  'reqkind.SURRENDER': 'ಸರೆಂಡರ್',
+  'requests.title': 'ಬ್ಯಾಲೆನ್ಸ್ ಬದಲಾವಣೆಗಾಗಿ ವಿನಂತಿಸಿ',
+  'requests.desc':
+    'ಇದು ನಿಮ್ಮ ಏಜೆಂಟ್‌ಗೆ (ಟಾಪ್-ಅಪ್) ಅಥವಾ ನಿರ್ವಾಹಕರಿಗೆ (ಸರೆಂಡರ್) ಪರಿಶೀಲನೆಗೆ ಹೋಗುತ್ತದೆ — ಅವರು ಅನುಮೋದಿಸುವವರೆಗೆ ಏನೂ ಬದಲಾಗುವುದಿಲ್ಲ.',
+  'requests.pendingWarning':
+    'ನಿಮಗೆ ಈಗಾಗಲೇ ಬಾಕಿ ಇರುವ {kind} ವಿನಂತಿ ಇದೆ — ಅದೇ ರೀತಿಯದನ್ನು ಇನ್ನೊಂದು ಎತ್ತುವ ಮೊದಲು ಅದನ್ನು ಕೆಳಗೆ ರದ್ದುಗೊಳಿಸಿ.',
+  'requests.whatDoYouNeed': 'ನಿಮಗೆ ಏನು ಬೇಕು',
+  'requests.topUpOption': 'ಹೆಚ್ಚಿನ ಟೋಕನ್‌ಗಳು (ಟಾಪ್-ಅಪ್)',
+  'requests.surrenderOption': 'ಟೋಕನ್‌ಗಳನ್ನು ಹಿಂತಿರುಗಿಸಿ (ಸರೆಂಡರ್)',
+  'requests.onlyHold': 'ನಿಮ್ಮ ಬಳಿ {held} ಮಾತ್ರ ಇವೆ.',
+  'requests.holdBoth': 'ಎರಡು ವಾಲೆಟ್‌ಗಳಲ್ಲಿ ಸೇರಿ ನಿಮ್ಮ ಬಳಿ {held} ಇವೆ.',
+  'requests.noteLabel': 'ಟಿಪ್ಪಣಿ (ಐಚ್ಛಿಕ)',
+  'requests.notePlaceholderTopUp': 'ಕಡಿಮೆಯಾಗುತ್ತಿವೆ',
+  'requests.notePlaceholderSurrender': 'ಇನ್ನು ಅಗತ್ಯವಿಲ್ಲ',
+  'requests.sending': 'ಕಳುಹಿಸಲಾಗುತ್ತಿದೆ…',
+  'requests.sendRequest': 'ವಿನಂತಿ ಕಳುಹಿಸಿ',
+  'requests.askedAgent': 'ನಿಮ್ಮ ಏಜೆಂಟ್‌ನಿಂದ {n} ಟೋಕನ್‌ಗಳನ್ನು ಕೇಳಿದ್ದೀರಿ.',
+  'requests.offeredGiveUp': '{n} ಟೋಕನ್‌ಗಳನ್ನು ಹಿಂತಿರುಗಿಸಲು ಆಫರ್ ಮಾಡಿದ್ದೀರಿ.',
+  'requests.yourRequestsTitle': 'ನಿಮ್ಮ ವಿನಂತಿಗಳು',
+  'requests.kindColumn': 'ಪ್ರಕಾರ',
+  'requests.statusColumn': 'ಸ್ಥಿತಿ',
+  'requests.noteColumn': 'ಟಿಪ್ಪಣಿ',
+  'requests.reviewerNoteColumn': 'ಪರಿಶೀಲಕರ ಟಿಪ್ಪಣಿ',
+  'requests.raisedColumn': 'ಕಳುಹಿಸಲಾಗಿದೆ',
+  'requests.noRequestsYet': 'ಇನ್ನೂ ಯಾವುದೇ ವಿನಂತಿಗಳಿಲ್ಲ.',
+  'requests.cancelling': 'ರದ್ದುಗೊಳ್ಳುತ್ತಿದೆ…',
+  'requests.cancel': 'ರದ್ದುಗೊಳಿಸಿ',
+  'requests.statusPending': 'ಬಾಕಿ ಇದೆ',
+  'requests.statusApproved': 'ಅನುಮೋದಿಸಲಾಗಿದೆ',
+  'requests.statusRejected': 'ತಿರಸ್ಕರಿಸಲಾಗಿದೆ',
+  'requests.statusCancelled': 'ರದ್ದುಗೊಳಿಸಲಾಗಿದೆ',
 };
 
 const DICTS: Record<Lang, Dict> = { en, hi, te, ta, kn, mr };
@@ -639,6 +837,11 @@ export function useLang(): LangValue {
  *  as an opt-in lookup rather than changing what that constant holds. */
 export function predictionTypeLabel(t: LangValue['t'], type: PredictionType): string {
   return t(`type.${type}`, PREDICTION_TYPE_LABEL[type]);
+}
+
+/** Same idea as predictionTypeLabel, for the two token-request kinds. */
+export function tokenRequestKindLabel(t: LangValue['t'], kind: TokenRequestKind): string {
+  return t(`reqkind.${kind}`, TOKEN_REQUEST_KIND_LABEL[kind]);
 }
 
 /** Wrap the Player app (only) in this — every other portal has no provider
