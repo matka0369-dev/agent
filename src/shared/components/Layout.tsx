@@ -154,9 +154,14 @@ export function Layout({
           )}
           <span className="badge">{ACCOUNT_TYPE_LABEL[user.accountType]}</span>
           <span className="topbar__user">{user.username}</span>
-          <Button size="sm" onClick={() => void logout()}>
-            {t('header.signOut', 'Sign out')}
-          </Button>
+          {/* Hidden below the sidebar's mobile breakpoint — the drawer's own
+              copy (right below) takes over there instead of this row
+              overflowing. Both render always; CSS picks one. */}
+          <span className="topbar__signout">
+            <Button size="sm" onClick={() => void logout()}>
+              {t('header.signOut', 'Sign out')}
+            </Button>
+          </span>
         </div>
       </header>
 
@@ -185,6 +190,15 @@ export function Layout({
                     {item.label}
                   </button>
                 ))}
+              </div>
+
+              {/* Only shown on the same narrow screens the drawer itself is
+                  for — see .sidebar__signout in styles.css — since that's
+                  exactly where the header no longer has room for it. */}
+              <div className="sidebar__signout">
+                <Button size="sm" style={{ width: '100%' }} onClick={() => void logout()}>
+                  {t('header.signOut', 'Sign out')}
+                </Button>
               </div>
             </nav>
           </>

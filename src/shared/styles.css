@@ -256,6 +256,13 @@ h3 {
   color: var(--text);
 }
 
+/* The drawer's own copy of Sign out (see .sidebar__signout) takes over
+   below the mobile breakpoint, so this one hides there instead of being
+   one more nowrap item competing for room in an already-tight row. */
+.sidebar__signout {
+  display: none;
+}
+
 /* ---------- Body / sidebar layout ---------- */
 
 .body {
@@ -388,6 +395,24 @@ h3 {
     display: inline-flex;
   }
 
+  /* The two nowrap items with the least claim on a phone-width header:
+     which of the four portal apps this is (staff already know — they
+     opened it) and Sign out, which moves into the drawer below instead. */
+  .topbar__portal {
+    display: none;
+  }
+  .topbar__signout {
+    display: none;
+  }
+
+  /* Safety net, not the primary fix — everything still fitting is the
+     point of the two rules above, but a very narrow phone (or a long
+     username) should scroll this row horizontally rather than clip it or
+     push the page itself wider than the viewport. */
+  .topbar__who {
+    overflow-x: auto;
+  }
+
   .sidebar {
     position: fixed;
     top: 0;
@@ -411,9 +436,27 @@ h3 {
     padding: 66px 16px 20px;
     transform: translateX(-100%);
     transition: transform 0.18s ease;
+    /* Column so Sign out (see .sidebar__signout below) can sit pinned to
+       the bottom via margin-top:auto instead of just tacked on wherever
+       the tab list happens to end. */
+    display: flex;
+    flex-direction: column;
   }
   .sidebar--open {
     transform: translateX(0);
+  }
+
+  .sidebar__list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  .sidebar__signout {
+    display: block;
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
   }
 
   .sidebar__backdrop {
