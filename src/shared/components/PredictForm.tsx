@@ -10,7 +10,7 @@ import {
   type ActiveGame,
   type PredictionType,
 } from '../lib/types';
-import { PICKED_NUMBER_PLACEHOLDER, validatePickedNumber } from '../lib/predictionValidation';
+import { inferTypeFromInput, validatePana } from '../lib/predictionValidation';
 import { Alert, Button, Card, Empty, Field } from './ui';
 
 // PREDICTION_TYPE_LABEL is shared with admin-facing components (result
@@ -257,8 +257,46 @@ function GamesHome({ games, now, balance }: { games: ActiveGame[]; now: number; 
   );
 }
 
+/** An amount input with a ₹ symbol fixed to its left edge — every stake
+ *  field on this page uses this instead of a bare `.input`. */
+function AmountInput({
+  value,
+  onChange,
+  placeholder,
+  invalid,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  invalid: boolean;
+}) {
+  return (
+    <div className="input-prefixed">
+      <span className="input-prefixed__symbol" aria-hidden="true">
+        ₹
+      </span>
+      <input
+        className="input"
+        inputMode="numeric"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        aria-invalid={invalid}
+      />
+    </div>
+  );
+}
+
 /** The single-game betting page, reached by picking a card on the home
- *  screen (or a direct/bookmarked link to /predict/:gameId). */
+ *  screen (or a direct/bookmarked link to /predict/:gameId).
+ *
+ * No bet-type picker: a Player just types the number they're predicting on
+ * and its length (plus, for a 3-digit pana, its digit pattern) says what
+ * type that is — inferTypeFromInput mirrors the same
+ * single/jodi/pana classification prediction-service itself uses. Full
+ * Sangam is the one shape that can't come from a bare number (it's two
+ * panas), so it gets its own pair of fields below, alongside rather than
+ * inside the generic form. */
 function GameBetForm({
   games,
   now,
@@ -278,12 +316,18 @@ function GameBetForm({
   const game = games.find((g) => g.gameId === gameId) ?? null;
   const state = game ? gameState(game, now) : null;
 
-  const [selectedType, setSelectedType] = useState<PredictionType>('OPEN_SINGLE');
-  const [pickedNumber, setPickedNumber] = useState('');
-  const [stake, setStake] = useState('');
+  const [number, setNumber] = useState('');
+  const [amount, setAmount] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [okMessage, setOkMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const [sangamOpen, setSangamOpen] = useState('');
+  const [sangamClose, setSangamClose] = useState('');
+  const [sangamAmount, setSangamAmount] = useState('');
+  const [sangamError, setSangamError] = useState<string | null>(null);
+  const [sangamOkMessage, setSangamOkMessage] = useState<string | null>(null);
+  const [sangamSubmitting, setSangamSubmitting] = useState(false);
 
   const typeStates = useMemo(() => {
     const map = new Map<PredictionType, number>();
@@ -291,16 +335,6 @@ function GameBetForm({
     for (const bt of ALL_TYPES) map.set(bt, msRemaining(game.cutoffs[bt], now));
     return map;
   }, [game, now]);
-
-  // If the selected type just closed, or no type is selected yet, jump to
-  // the first one still open rather than leaving a dead control selected.
-  useEffect(() => {
-    if (!game) return;
-    const remaining = typeStates.get(selectedType) ?? 0;
-    if (remaining > 0) return;
-    const nextOpen = ALL_TYPES.find((bt) => (typeStates.get(bt) ?? 0) > 0);
-    if (nextOpen) setSelectedType(nextOpen);
-  }, [game, selectedType, typeStates]);
 
   if (!game) {
     return (
@@ -317,48 +351,63 @@ function GameBetForm({
     );
   }
 
-  const formatError = pickedNumber ? validatePickedNumber(selectedType, pickedNumber) : null;
-  const selectedRemaining = typeStates.get(selectedType) ?? 0;
-  const isClosedForType = selectedRemaining <= 0;
-
-  const stakeNum = Number(stake);
-  const stakeInvalid = Boolean(
-    stake.trim() === '' ||
-      !Number.isInteger(stakeNum) ||
-      stakeNum < game.minStake ||
-      stakeNum > game.maxStake,
-  );
-
   // Whether *any* type still has a live cutoff — not the same question as
-  // the card's upcoming/open/closed state (see below). A round is only
-  // truly done once every type's own cutoff has passed.
+  // the card's upcoming/open/closed state. A round is only truly done once
+  // every type's own cutoff has passed.
   const anyTypeOpen = ALL_TYPES.some((bt) => (typeStates.get(bt) ?? 0) > 0);
 
-  const canSubmit = !isClosedForType && !formatError && pickedNumber !== '' && !stakeInvalid;
+  // Before the open declaration, only Open-side numbers (Single/Jodi/Pana)
+  // and Full Sangam mean anything — Close doesn't exist as a concept yet.
+  // Once it declares, Close-side numbers open up and Open-side ones are
+  // already past their own cutoff anyway (see openBetsCloseIn below), so
+  // there's no window where offering both at once would be meaningful.
+  const phase: 'open' | 'close' = state === 'upcoming' ? 'open' : 'close';
+
+  const inferredType = number ? inferTypeFromInput(number, phase) : null;
+  let numberError: string | null = null;
+  if (number) {
+    if (!/^[0-9]{1,3}$/.test(number)) {
+      numberError = t('predict.invalidLength', 'Enter 1 to 3 digits');
+    } else if (number.length === 2 && phase === 'close') {
+      numberError = t('predict.invalidJodiClosePhase', 'Jodi (2 digits) is only available before the open declaration');
+    } else if (!inferredType) {
+      numberError = validatePana(number);
+    }
+  }
+
+  const numberRemaining = inferredType ? (typeStates.get(inferredType) ?? 0) : null;
+  const numberClosedForType = numberRemaining !== null && numberRemaining <= 0;
+
+  const amountNum = Number(amount);
+  const amountInvalid = Boolean(
+    amount.trim() === '' || !Number.isInteger(amountNum) || amountNum < game.minStake || amountNum > game.maxStake,
+  );
+
+  const canSubmit = inferredType !== null && !numberError && !numberClosedForType && !amountInvalid;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!game) return;
+    if (!game || !inferredType) return;
     setSubmitting(true);
     setError(null);
     setOkMessage(null);
     try {
       const result = await api.placePrediction({
         gameId: game.gameId,
-        typeId: selectedType,
-        pickedNumber,
-        stake: stakeNum,
+        typeId: inferredType,
+        pickedNumber: number,
+        stake: amountNum,
       });
       setOkMessage(
         t('predict.placed', 'Placed — {number} at {mult}x. New balance: {bal}.', {
-          number: pickedNumber,
+          number,
           mult: result.oddsMultiplier,
           bal: result.balanceAfter.toLocaleString(),
         }),
       );
       setBalance(result.balanceAfter);
-      setPickedNumber('');
-      setStake('');
+      setNumber('');
+      setAmount('');
       onPlaced?.();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : String(err));
@@ -367,8 +416,66 @@ function GameBetForm({
     }
   }
 
-  const openRemaining = msRemaining(game.cutoffs.OPEN_SINGLE, now);
-  const closeRemaining = msRemaining(game.cutoffs.CLOSE_SINGLE, now);
+  // Full Sangam — open-cutoff group, so only offered during the open phase.
+  const sangamLeftError = sangamOpen ? validatePana(sangamOpen) : null;
+  const sangamRightError = sangamClose ? validatePana(sangamClose) : null;
+  const sangamRemaining = typeStates.get('FULL_SANGAM') ?? 0;
+  const sangamClosedForType = sangamRemaining <= 0;
+  const sangamAmountNum = Number(sangamAmount);
+  const sangamAmountInvalid = Boolean(
+    sangamAmount.trim() === '' ||
+      !Number.isInteger(sangamAmountNum) ||
+      sangamAmountNum < game.minStake ||
+      sangamAmountNum > game.maxStake,
+  );
+  const sangamCanSubmit =
+    sangamOpen !== '' &&
+    sangamClose !== '' &&
+    !sangamLeftError &&
+    !sangamRightError &&
+    !sangamClosedForType &&
+    !sangamAmountInvalid;
+
+  async function submitSangam(e: React.FormEvent) {
+    e.preventDefault();
+    if (!game) return;
+    setSangamSubmitting(true);
+    setSangamError(null);
+    setSangamOkMessage(null);
+    try {
+      const picked = `${sangamOpen}-${sangamClose}`;
+      const result = await api.placePrediction({
+        gameId: game.gameId,
+        typeId: 'FULL_SANGAM',
+        pickedNumber: picked,
+        stake: sangamAmountNum,
+      });
+      setSangamOkMessage(
+        t('predict.placed', 'Placed — {number} at {mult}x. New balance: {bal}.', {
+          number: picked,
+          mult: result.oddsMultiplier,
+          bal: result.balanceAfter.toLocaleString(),
+        }),
+      );
+      setBalance(result.balanceAfter);
+      setSangamOpen('');
+      setSangamClose('');
+      setSangamAmount('');
+      onPlaced?.();
+    } catch (err) {
+      setSangamError(err instanceof ApiError ? err.message : String(err));
+    } finally {
+      setSangamSubmitting(false);
+    }
+  }
+
+  const numberHint = numberError
+    ? numberError
+    : inferredType
+      ? t('predict.predictingOn', 'Predicting: {type}', { type: typeLabel(t, inferredType) })
+      : phase === 'open'
+        ? t('predict.numberHintOpen', '1 digit = Single · 2 digits = Jodi · 3 digits = Pana')
+        : t('predict.numberHintClose', '1 digit = Single · 3 digits = Pana');
 
   return (
     <Card
@@ -392,18 +499,11 @@ function GameBetForm({
         </Alert>
       )}
 
-      {/* Informational only — never blocks the form below it. Open/Jodi/
-          Sangam bets are on the *open* declaration and close a minute
-          before this game's open time, so they're placeable right now,
-          before the round has "opened"; Close bets stay open separately
-          until a minute before close. There's no window where the card
-          shows "upcoming" and the form is correctly hidden — only "closed"
-          (every type's cutoff has passed) actually means no more betting. */}
-      {state === 'upcoming' && anyTypeOpen && (
+      {phase === 'open' && anyTypeOpen && (
         <Alert tone="info">
           {t(
             'predict.opensAtInfo',
-            "{name}'s open declaration is at {time} — Open/Jodi/Sangam bets close a minute before that; Close bets stay open separately.",
+            "{name}'s open declaration is at {time} — Open numbers (including Full Sangam) close a minute before that; Close numbers open right after.",
             {
               name: game.name,
               time: new Date(game.opensAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -411,131 +511,148 @@ function GameBetForm({
           )}
         </Alert>
       )}
+      {phase === 'close' && anyTypeOpen && (
+        <Alert tone="info">
+          {t('predict.closePhaseNote', 'The open declaration has happened — you can now predict on Close numbers.')}
+        </Alert>
+      )}
 
       {anyTypeOpen && (
-        <form onSubmit={submit}>
-          {error && <Alert tone="error">{error}</Alert>}
-          {okMessage && <Alert tone="success">{okMessage}</Alert>}
+        <>
+          <form onSubmit={submit}>
+            {error && <Alert tone="error">{error}</Alert>}
+            {okMessage && <Alert tone="success">{okMessage}</Alert>}
 
-          <div className="note" style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-            <span>
-              {t('predict.openBetsCloseIn', 'Open bets close in:')} {formatRemaining(openRemaining)}
-            </span>
-            <span>
-              {t('predict.closeBetsCloseIn', 'Close bets close in:')} {formatRemaining(closeRemaining)}
-            </span>
-          </div>
-
-          {/* The timer that actually matters: whichever type is selected
-              below. Ticks every second (the same `now` driving the chips'
-              disabled state), and is the one thing that decides whether
-              Place prediction is clickable — not the two general lines
-              above, which cover the game as a whole. */}
-          <div
-            className={
-              'predict-countdown' +
-              (isClosedForType
-                ? ' predict-countdown--closed'
-                : selectedRemaining < 60_000
-                  ? ' predict-countdown--warn'
-                  : '')
-            }
-          >
-            <span>{typeLabel(t, selectedType)}:</span>
-            <span className="predict-countdown__time">
-              {isClosedForType
-                ? t('predict.closedForRound', 'Closed for this round')
-                : `${formatRemaining(selectedRemaining)} ${t('predict.left', 'left')}`}
-            </span>
-          </div>
-
-          {/* Shown as chips rather than a <select> so every bet type — and
-              which of them are still open — is visible at a glance instead
-              of hidden behind a dropdown the Player has to open first. */}
-          <div className="type-chip-group">
-            <div className="type-chip-group__label">{t('predict.openGroup', 'Open')}</div>
-            <div className="type-chip-row">
-              {PLAYER_OPEN_TYPES.map((bt) => {
-                const open = (typeStates.get(bt) ?? 0) > 0;
-                return (
-                  <button
-                    key={bt}
-                    type="button"
-                    className={`type-chip${selectedType === bt ? ' type-chip--selected' : ''}`}
-                    disabled={!open}
-                    onClick={() => setSelectedType(bt)}
-                    title={open ? undefined : t('predict.closedForRound', 'Closed for this round')}
-                  >
-                    {typeLabel(t, bt)}
-                  </button>
-                );
-              })}
+            <div className="note" style={{ marginBottom: 10 }}>
+              {phase === 'open'
+                ? `${t('predict.openBetsCloseIn', 'Open numbers close in:')} ${formatRemaining(msRemaining(game.cutoffs.OPEN_SINGLE, now))}`
+                : `${t('predict.closeBetsCloseIn', 'Close numbers close in:')} ${formatRemaining(msRemaining(game.cutoffs.CLOSE_SINGLE, now))}`}
             </div>
-          </div>
 
-          <div className="type-chip-group">
-            <div className="type-chip-group__label">{t('predict.closeGroup', 'Close')}</div>
-            <div className="type-chip-row">
-              {CLOSE_CUTOFF_TYPES.map((bt) => {
-                const open = (typeStates.get(bt) ?? 0) > 0;
-                return (
-                  <button
-                    key={bt}
-                    type="button"
-                    className={`type-chip${selectedType === bt ? ' type-chip--selected' : ''}`}
-                    disabled={!open}
-                    onClick={() => setSelectedType(bt)}
-                    title={open ? undefined : t('predict.closedForRound', 'Closed for this round')}
-                  >
-                    {typeLabel(t, bt)}
-                  </button>
-                );
-              })}
+            {inferredType && (
+              <div
+                className={
+                  'predict-countdown' +
+                  (numberClosedForType
+                    ? ' predict-countdown--closed'
+                    : (numberRemaining ?? 0) < 60_000
+                      ? ' predict-countdown--warn'
+                      : '')
+                }
+              >
+                <span>{typeLabel(t, inferredType)}:</span>
+                <span className="predict-countdown__time">
+                  {numberClosedForType
+                    ? t('predict.closedForRound', 'Closed for this round')
+                    : `${formatRemaining(numberRemaining ?? 0)} ${t('predict.left', 'left')}`}
+                </span>
+              </div>
+            )}
+
+            <div className="form-row">
+              <Field label={t('predict.yourPick', 'Number')} hint={numberHint} hintTone={numberError ? 'bad' : inferredType ? 'ok' : undefined}>
+                <input
+                  className="input"
+                  value={number}
+                  onChange={(e) => setNumber(e.target.value.trim())}
+                  maxLength={3}
+                  placeholder="123"
+                  aria-invalid={Boolean(numberError)}
+                />
+              </Field>
+
+              <Field
+                label={t('predict.stake', 'Amount')}
+                hint={t('predict.stakeHint', 'Between ₹{min} and ₹{max}', {
+                  min: game.minStake,
+                  max: game.maxStake,
+                })}
+                hintTone={amount && amountInvalid ? 'bad' : undefined}
+              >
+                <AmountInput
+                  value={amount}
+                  onChange={setAmount}
+                  placeholder={String(game.minStake)}
+                  invalid={Boolean(amount) && amountInvalid}
+                />
+              </Field>
             </div>
-          </div>
 
-          <div className="form-row">
-            <Field
-              label={t('predict.yourPick', 'Your pick')}
-              hint={formatError ?? `e.g. ${PICKED_NUMBER_PLACEHOLDER[selectedType]}`}
-              hintTone={formatError ? 'bad' : undefined}
-            >
-              <input
-                className="input"
-                value={pickedNumber}
-                onChange={(e) => setPickedNumber(e.target.value.trim())}
-                placeholder={PICKED_NUMBER_PLACEHOLDER[selectedType]}
-                aria-invalid={Boolean(formatError)}
-              />
-            </Field>
+            <Button type="submit" variant="primary" disabled={!canSubmit || submitting}>
+              {submitting
+                ? t('predict.placing', 'Placing…')
+                : numberClosedForType
+                  ? t('predict.timeUp', 'Time is up for this type')
+                  : t('predict.placePrediction', 'Place prediction')}
+            </Button>
+          </form>
 
-            <Field
-              label={t('predict.stake', 'Stake')}
-              hint={t('predict.stakeHint', 'Between {min} and {max}', {
-                min: game.minStake,
-                max: game.maxStake,
-              })}
-              hintTone={stake && stakeInvalid ? 'bad' : undefined}
-            >
-              <input
-                className="input"
-                inputMode="numeric"
-                value={stake}
-                onChange={(e) => setStake(e.target.value)}
-                placeholder={String(game.minStake)}
-                aria-invalid={Boolean(stake) && stakeInvalid}
-              />
-            </Field>
-          </div>
+          {phase === 'open' && (
+            <form onSubmit={submitSangam} style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
+              <div className="field__label" style={{ marginBottom: 10 }}>
+                {t('predict.fullSangamTitle', 'Full Sangam')}
+              </div>
 
-          <Button type="submit" variant="primary" disabled={!canSubmit || submitting}>
-            {submitting
-              ? t('predict.placing', 'Placing…')
-              : isClosedForType
-                ? t('predict.timeUp', 'Time is up for this type')
-                : t('predict.placePrediction', 'Place prediction')}
-          </Button>
-        </form>
+              {sangamError && <Alert tone="error">{sangamError}</Alert>}
+              {sangamOkMessage && <Alert tone="success">{sangamOkMessage}</Alert>}
+
+              <div className="form-row">
+                <Field
+                  label={t('predict.fullSangamOpenLabel', 'Open pana')}
+                  hint={sangamLeftError ?? undefined}
+                  hintTone={sangamLeftError ? 'bad' : undefined}
+                >
+                  <input
+                    className="input"
+                    value={sangamOpen}
+                    onChange={(e) => setSangamOpen(e.target.value.trim())}
+                    maxLength={3}
+                    placeholder="123"
+                    aria-invalid={Boolean(sangamLeftError)}
+                  />
+                </Field>
+                <Field
+                  label={t('predict.fullSangamCloseLabel', 'Close pana')}
+                  hint={sangamRightError ?? undefined}
+                  hintTone={sangamRightError ? 'bad' : undefined}
+                >
+                  <input
+                    className="input"
+                    value={sangamClose}
+                    onChange={(e) => setSangamClose(e.target.value.trim())}
+                    maxLength={3}
+                    placeholder="456"
+                    aria-invalid={Boolean(sangamRightError)}
+                  />
+                </Field>
+              </div>
+
+              <Field
+                label={t('predict.stake', 'Amount')}
+                hint={t('predict.stakeHint', 'Between ₹{min} and ₹{max}', {
+                  min: game.minStake,
+                  max: game.maxStake,
+                })}
+                hintTone={sangamAmount && sangamAmountInvalid ? 'bad' : undefined}
+              >
+                <AmountInput
+                  value={sangamAmount}
+                  onChange={setSangamAmount}
+                  placeholder={String(game.minStake)}
+                  invalid={Boolean(sangamAmount) && sangamAmountInvalid}
+                />
+              </Field>
+
+              <Button type="submit" variant="primary" disabled={!sangamCanSubmit || sangamSubmitting}>
+                {sangamSubmitting
+                  ? t('predict.placing', 'Placing…')
+                  : sangamClosedForType
+                    ? t('predict.timeUp', 'Time is up for this type')
+                    : t('predict.placePrediction', 'Place prediction')}
+              </Button>
+            </form>
+          )}
+        </>
       )}
     </Card>
   );

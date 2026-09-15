@@ -1,6 +1,45 @@
 import type { Prediction, PredictionOutcome } from '../lib/types';
 import { PREDICTION_TYPE_LABEL } from '../lib/types';
-import { Card, Empty, RefreshButton, TableWrap, formatDate } from './ui';
+import { Card, CopyButton, Empty, RefreshButton, TableWrap, formatDate } from './ui';
+
+// String order, not numeric — "10" sorts before "9" here, which is exactly
+// the point: a picked number is a fixed-width code (a Jodi's "00" or a
+// pana's "003"), not a quantity, so treating it as one would put "9" ahead
+// of a lower three-digit pana it doesn't actually outrank.
+function byPickedNumberAscending(a: Prediction, b: Prediction): number {
+  return a.pickedNumber < b.pickedNumber ? -1 : a.pickedNumber > b.pickedNumber ? 1 : 0;
+}
+
+function toTsv(predictions: Prediction[], showPlayer: boolean): string {
+  const header = [
+    ...(showPlayer ? ['Player'] : []),
+    'Game',
+    'Type',
+    'Pick',
+    'Stake',
+    'Odds',
+    'Outcome',
+    'Payout',
+    'Placed',
+  ];
+  const lines = [header.join('\t')];
+  for (const p of [...predictions].sort(byPickedNumberAscending)) {
+    lines.push(
+      [
+        ...(showPlayer ? [p.user.username] : []),
+        p.round.game.name,
+        PREDICTION_TYPE_LABEL[p.typeId],
+        p.pickedNumber,
+        String(p.stake),
+        `${p.oddsMultiplier}x`,
+        p.outcome,
+        p.payout === null ? '' : String(p.payout),
+        formatDate(p.createdAt),
+      ].join('\t'),
+    );
+  }
+  return lines.join('\n');
+}
 
 function OutcomeBadge({ outcome }: { outcome: PredictionOutcome }) {
   const cls = outcome === 'WON' ? 'badge--ok' : outcome === 'LOST' ? 'badge--off' : 'badge--muted';
@@ -29,11 +68,16 @@ export function PredictionsTable({
   onRefresh?: () => void;
   refreshing?: boolean;
 }) {
-  const action = onRefresh ? <RefreshButton onClick={onRefresh} refreshing={refreshing} /> : undefined;
+  const action = (
+    <div className="btn-row">
+      {predictions.length > 0 && <CopyButton getText={() => toTsv(predictions, showPlayer)} />}
+      {onRefresh && <RefreshButton onClick={onRefresh} refreshing={refreshing} />}
+    </div>
+  );
 
   if (predictions.length === 0) {
     return (
-      <Card title={title ?? 'Predictions'} desc={desc} action={action}>
+      <Card title={title ?? 'Predictions'} desc={desc} action={onRefresh ? action : undefined}>
         <Empty>No predictions yet.</Empty>
       </Card>
     );

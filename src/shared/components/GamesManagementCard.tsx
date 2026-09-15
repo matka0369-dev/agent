@@ -235,7 +235,11 @@ function CreateGameForm({ onCreated, onCancel }: { onCreated: () => void; onCanc
   const [timezone, setTimezone] = useState('Asia/Kolkata');
   const [weeklyOffDays, setWeeklyOffDays] = useState<Set<number>>(new Set());
   const [minStake, setMinStake] = useState('10');
-  const [maxStake, setMaxStake] = useState('10000');
+  // 200,000, not the requested 1,000,000 — the server caps maxStake at
+  // ~214,748 (SAFE_MAX_STAKE in games.service.ts): payouts are int4, and at
+  // Full Sangam's 10,000x rate a 1,000,000 stake would overflow it by a
+  // wide margin. 200k is a round number safely under that ceiling.
+  const [maxStake, setMaxStake] = useState('200000');
   const [error, setError] = useState<string | null>(null);
   const [okMessage, setOkMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);

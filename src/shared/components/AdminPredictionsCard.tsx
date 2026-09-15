@@ -7,7 +7,31 @@ import {
   type PredictionType,
   type UserSummary,
 } from '../lib/types';
-import { Alert, Card, Empty, Field, RefreshButton, TableWrap } from './ui';
+import { Alert, Card, CopyButton, Empty, Field, RefreshButton, TableWrap } from './ui';
+
+// String order, not numeric — a picked number is a fixed-width code (a
+// Jodi's "00" or a pana's "003"), not a quantity, so "10" belongs before
+// "9" here rather than after it.
+function byPickedNumberAscending(a: AggregateRow, b: AggregateRow): number {
+  return a.pickedNumber < b.pickedNumber ? -1 : a.pickedNumber > b.pickedNumber ? 1 : 0;
+}
+
+function rowsToTsv(rows: AggregateRow[], showGame: boolean, showDate: boolean): string {
+  const header = ['Number', ...(showGame ? ['Game'] : []), ...(showDate ? ['Date'] : []), 'Bets', 'Tokens'];
+  const lines = [header.join('\t')];
+  for (const r of [...rows].sort(byPickedNumberAscending)) {
+    lines.push(
+      [
+        r.pickedNumber,
+        ...(showGame ? [r.gameName] : []),
+        ...(showDate ? [r.date] : []),
+        String(r.betCount),
+        String(r.totalStake),
+      ].join('\t'),
+    );
+  }
+  return lines.join('\n');
+}
 
 /**
  * The Admin's book for one game: how much is riding on each number, broken
@@ -200,6 +224,7 @@ export function AdminPredictionsCard({ agents }: { agents: UserSummary[] }) {
                 pctValid ? ` · ${applyPct(typeTotal).toLocaleString()} after −${pct}%` : ''
               }`}
               flush
+              action={<CopyButton getText={() => rowsToTsv(typeRows, !gameId, !date)} />}
             >
               <TableWrap>
                 <thead>

@@ -41,6 +41,7 @@ export {
   Alert,
   Button,
   Card,
+  CopyButton,
   Empty,
   Field,
   RefreshButton,

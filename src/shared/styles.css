@@ -835,6 +835,24 @@ h3 {
   border-color: var(--danger);
 }
 
+/* A rupee-prefixed amount input — the symbol sits inside the box's left
+   edge, and the input's own left padding is pushed out from under it. */
+.input-prefixed {
+  position: relative;
+}
+.input-prefixed__symbol {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  pointer-events: none;
+}
+.input-prefixed .input {
+  padding-left: 26px;
+}
+
 /* Footer strip for a flush card that owns a save action. */
 .card__foot {
   display: flex;

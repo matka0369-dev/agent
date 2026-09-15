@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { ACCOUNT_TYPE_LABEL, type AccountType } from '../lib/types';
 import { useActiveTab } from './tab-context';
 
@@ -121,6 +121,42 @@ export function RefreshButton({
   return (
     <Button size="sm" onClick={onClick} disabled={refreshing}>
       {refreshing ? 'Refreshing…' : '↻ Refresh'}
+    </Button>
+  );
+}
+
+/**
+ * Drop into a tabular card's `action` slot next to (or instead of)
+ * RefreshButton. `getText` is called at click time, not render time, so it
+ * always copies whatever's on screen right now rather than a stale
+ * snapshot from whenever this button last re-rendered.
+ */
+export function CopyButton({ getText }: { getText: () => string }) {
+  const [copied, setCopied] = useState(false);
+
+  async function copy() {
+    const text = getText();
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // Clipboard permission denied or unavailable (e.g. non-HTTPS) — fall
+      // back to the one copy path that always works everywhere.
+      const el = document.createElement('textarea');
+      el.value = text;
+      el.style.position = 'fixed';
+      el.style.opacity = '0';
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+
+  return (
+    <Button size="sm" onClick={() => void copy()}>
+      {copied ? 'Copied ✓' : 'Copy'}
     </Button>
   );
 }

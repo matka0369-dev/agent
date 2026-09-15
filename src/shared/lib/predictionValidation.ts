@@ -89,6 +89,40 @@ export function validatePickedNumber(type: PredictionType, picked: string): stri
   }
 }
 
+/** A single pana input's own error, independent of which side (open/close)
+ *  of Full Sangam it ends up on — both sides accept any valid pana, not a
+ *  specific single/double/triple shape. */
+export function validatePana(picked: string): string | null {
+  return isValidPana(picked)
+    ? null
+    : 'Must be a non-decreasing 3-digit pana (0 sorts as 10) — e.g. 123, 122, or 111';
+}
+
+/**
+ * Maps a bare number the Player typed to the bet type it implies, given
+ * which side of the round is currently open — length alone picks Single vs
+ * Jodi vs Pana, and for a Pana its digit pattern (via isSingle/Double/
+ * TriplePana above) picks which of the three. Returns null for anything
+ * that isn't a real prediction under that phase: wrong length, an invalid
+ * (decreasing-digit) pana, or a 2-digit Jodi typed during the close phase,
+ * which doesn't exist as a type at all.
+ */
+export function inferTypeFromInput(picked: string, phase: 'open' | 'close'): PredictionType | null {
+  if (picked.length === 1) {
+    return isDigit(picked) ? (phase === 'open' ? 'OPEN_SINGLE' : 'CLOSE_SINGLE') : null;
+  }
+  if (picked.length === 2) {
+    return phase === 'open' && isDigit(picked[0]) && isDigit(picked[1]) ? 'JODI' : null;
+  }
+  if (picked.length === 3) {
+    if (isTriplePana(picked)) return phase === 'open' ? 'OPEN_TRIPLE_PANA' : 'CLOSE_TRIPLE_PANA';
+    if (isDoublePana(picked)) return phase === 'open' ? 'OPEN_DOUBLE_PANA' : 'CLOSE_DOUBLE_PANA';
+    if (isSinglePana(picked)) return phase === 'open' ? 'OPEN_SINGLE_PANA' : 'CLOSE_SINGLE_PANA';
+    return null;
+  }
+  return null;
+}
+
 export const PICKED_NUMBER_PLACEHOLDER: Record<PredictionType, string> = {
   OPEN_SINGLE: '7',
   CLOSE_SINGLE: '3',
