@@ -113,6 +113,7 @@ export function RequestQueueCard({ viewerId }: { viewerId?: string }) {
               <th>Kind</th>
               <th style={{ textAlign: 'right' }}>Amount</th>
               <th>Note</th>
+              <th>Image</th>
               <th>Status</th>
               <th>Claimed by</th>
               <th>Raised</th>
@@ -130,6 +131,19 @@ export function RequestQueueCard({ viewerId }: { viewerId?: string }) {
                   <td>{TOKEN_REQUEST_KIND_LABEL[r.kind]}</td>
                   <td className="cell-num">{r.amount.toLocaleString()}</td>
                   <td className="cell-muted">{r.note ?? '—'}</td>
+                  <td>
+                    {r.imageMimeType ? (
+                      <a href={api.tokenRequestImageUrl(r.id)} target="_blank" rel="noreferrer">
+                        <img
+                          src={api.tokenRequestImageUrl(r.id)}
+                          alt="Attached"
+                          style={{ width: 32, height: 32, objectFit: 'cover', borderRadius: 6, border: '1px solid var(--border)' }}
+                        />
+                      </a>
+                    ) : (
+                      <span className="cell-muted">—</span>
+                    )}
+                  </td>
                   <td>
                     <span className={statusBadgeClass(r.status)}>{r.status}</span>
                     {r.resolutionNote && <div className="cell-muted">{r.resolutionNote}</div>}

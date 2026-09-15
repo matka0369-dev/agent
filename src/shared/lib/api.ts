@@ -329,11 +329,19 @@ export const api = {
 
   // ---- Token requests ----
 
-  /** A Player asking for a balance change. One open request per kind at a time. */
-  createTokenRequest: (body: { kind: TokenRequestKind; amount: number; note?: string }) =>
+  /** A Player asking for a balance change. One open request per kind at a
+   *  time. `image` is a data URL (data:image/png;base64,...), 2MB decoded
+   *  or less — see ARCHITECTURE.md "Hard safety boundaries" (2026-09-15
+   *  revision). */
+  createTokenRequest: (body: { kind: TokenRequestKind; amount: number; note?: string; image?: string }) =>
     request<TokenRequest>('/token-requests', { method: 'POST', body: JSON.stringify(body) }),
 
   myTokenRequests: () => request<TokenRequest[]>('/token-requests/me'),
+
+  /** Not a `request()` call — this is a URL to hand an `<img>` tag directly,
+   *  which sends the session cookie itself same as any other same-origin
+   *  request. Only meaningful when the request's `imageMimeType` is set. */
+  tokenRequestImageUrl: (id: string) => `${BASE_URL}/token-requests/${id}/image`,
 
   /** A Player withdrawing their own request before anyone acts on it. */
   cancelTokenRequest: (id: string) =>

@@ -147,6 +147,13 @@ const en: Dict = {
   'requests.statusApproved': 'Approved',
   'requests.statusRejected': 'Rejected',
   'requests.statusCancelled': 'Cancelled',
+  'requests.imageLabel': 'Attach an image (optional)',
+  'requests.imageHint': 'PNG, JPEG, or WebP, up to 2MB',
+  'requests.imageTooLarge': 'That image is larger than 2MB',
+  'requests.imageInvalidType': 'Must be a PNG, JPEG, or WebP image',
+  'requests.removeImage': 'Remove',
+  'requests.imageColumn': 'Image',
+  'requests.viewImage': 'View',
 };
 
 const hi: Dict = {
@@ -275,6 +282,13 @@ const hi: Dict = {
   'requests.statusApproved': 'मंज़ूर',
   'requests.statusRejected': 'अस्वीकृत',
   'requests.statusCancelled': 'रद्द',
+  'requests.imageLabel': 'एक इमेज जोड़ें (वैकल्पिक)',
+  'requests.imageHint': 'PNG, JPEG, या WebP, 2MB तक',
+  'requests.imageTooLarge': 'यह इमेज 2MB से बड़ी है',
+  'requests.imageInvalidType': 'PNG, JPEG, या WebP इमेज होनी चाहिए',
+  'requests.removeImage': 'हटाएं',
+  'requests.imageColumn': 'इमेज',
+  'requests.viewImage': 'देखें',
 };
 
 const mr: Dict = {
@@ -403,6 +417,13 @@ const mr: Dict = {
   'requests.statusApproved': 'मंजूर',
   'requests.statusRejected': 'नाकारले',
   'requests.statusCancelled': 'रद्द',
+  'requests.imageLabel': 'एक इमेज जोडा (ऐच्छिक)',
+  'requests.imageHint': 'PNG, JPEG, किंवा WebP, 2MB पर्यंत',
+  'requests.imageTooLarge': 'ही इमेज 2MB पेक्षा मोठी आहे',
+  'requests.imageInvalidType': 'PNG, JPEG, किंवा WebP इमेज असावी',
+  'requests.removeImage': 'काढा',
+  'requests.imageColumn': 'इमेज',
+  'requests.viewImage': 'पहा',
 };
 
 const te: Dict = {
@@ -531,6 +552,13 @@ const te: Dict = {
   'requests.statusApproved': 'ఆమోదించబడింది',
   'requests.statusRejected': 'తిరస్కరించబడింది',
   'requests.statusCancelled': 'రద్దు చేయబడింది',
+  'requests.imageLabel': 'ఒక చిత్రాన్ని జోడించండి (ఐచ్ఛికం)',
+  'requests.imageHint': 'PNG, JPEG, లేదా WebP, 2MB వరకు',
+  'requests.imageTooLarge': 'ఈ చిత్రం 2MB కంటే పెద్దది',
+  'requests.imageInvalidType': 'PNG, JPEG, లేదా WebP చిత్రం అయి ఉండాలి',
+  'requests.removeImage': 'తీసివేయండి',
+  'requests.imageColumn': 'చిత్రం',
+  'requests.viewImage': 'చూడండి',
 };
 
 const ta: Dict = {
@@ -660,6 +688,13 @@ const ta: Dict = {
   'requests.statusApproved': 'அங்கீகரிக்கப்பட்டது',
   'requests.statusRejected': 'நிராகரிக்கப்பட்டது',
   'requests.statusCancelled': 'ரத்து செய்யப்பட்டது',
+  'requests.imageLabel': 'ஒரு படத்தை இணைக்கவும் (விருப்பத்தேர்வு)',
+  'requests.imageHint': 'PNG, JPEG, அல்லது WebP, 2MB வரை',
+  'requests.imageTooLarge': 'இந்தப் படம் 2MB ஐ விட பெரியது',
+  'requests.imageInvalidType': 'PNG, JPEG, அல்லது WebP படமாக இருக்க வேண்டும்',
+  'requests.removeImage': 'அகற்று',
+  'requests.imageColumn': 'படம்',
+  'requests.viewImage': 'பார்',
 };
 
 const kn: Dict = {
@@ -788,6 +823,13 @@ const kn: Dict = {
   'requests.statusApproved': 'ಅನುಮೋದಿಸಲಾಗಿದೆ',
   'requests.statusRejected': 'ತಿರಸ್ಕರಿಸಲಾಗಿದೆ',
   'requests.statusCancelled': 'ರದ್ದುಗೊಳಿಸಲಾಗಿದೆ',
+  'requests.imageLabel': 'ಒಂದು ಚಿತ್ರವನ್ನು ಲಗತ್ತಿಸಿ (ಐಚ್ಛಿಕ)',
+  'requests.imageHint': 'PNG, JPEG, ಅಥವಾ WebP, 2MB ವರೆಗೆ',
+  'requests.imageTooLarge': 'ಈ ಚಿತ್ರ 2MB ಗಿಂತ ದೊಡ್ಡದಾಗಿದೆ',
+  'requests.imageInvalidType': 'PNG, JPEG, ಅಥವಾ WebP ಚಿತ್ರವಾಗಿರಬೇಕು',
+  'requests.removeImage': 'ತೆಗೆದುಹಾಕಿ',
+  'requests.imageColumn': 'ಚಿತ್ರ',
+  'requests.viewImage': 'ನೋಡಿ',
 };
 
 const DICTS: Record<Lang, Dict> = { en, hi, te, ta, kn, mr };

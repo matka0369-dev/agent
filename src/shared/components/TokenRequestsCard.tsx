@@ -4,6 +4,20 @@ import { tokenRequestKindLabel, useLang } from '../lib/i18n';
 import { type TokenRequest, type TokenRequestKind } from '../lib/types';
 import { Alert, Button, Card, Empty, Field, RefreshButton, TableWrap, formatDate } from './ui';
 
+// Mirrors MAX_IMAGE_BYTES in core-service's requests/image-data-url.util —
+// checked here too so a too-large file never reaches the network at all.
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
+
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
 function statusBadgeClass(status: TokenRequest['status']) {
   if (status === 'APPROVED') return 'badge badge--ok';
   if (status === 'PENDING') return 'badge badge--muted';
@@ -21,11 +35,11 @@ function statusLabel(t: ReturnType<typeof useLang>['t'], status: TokenRequest['s
  * A Player asking their Agent (top-up) or an Admin (surrender) for a
  * balance change, entirely inside the system.
  *
- * Deliberately just an amount and a note — no attachment, no external
- * reference number. A request describes what you want to happen to tokens
- * you already have standing in this ledger; it is never evidence of
- * something that happened outside it. See ARCHITECTURE.md "Hard safety
- * boundaries" — that boundary is why this form doesn't grow a file picker.
+ * An amount, a note, and — since 2026-09-15, by explicit sign-off — one
+ * optional image, shown to whichever reviewer already has this request in
+ * scope. See ARCHITECTURE.md "Hard safety boundaries" for the exact
+ * revision: the image is displayed to a human, never parsed or treated as
+ * proof of anything that happened outside this ledger.
  */
 export function TokenRequestsCard({
   mainBalance,
@@ -44,6 +58,8 @@ export function TokenRequestsCard({
   const [kind, setKind] = useState<TokenRequestKind>('TOP_UP');
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
+  const [image, setImage] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [okMessage, setOkMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -71,13 +87,34 @@ export function TokenRequestsCard({
   const hasOpenOfKind = requests.some((r) => r.kind === kind && r.status === 'PENDING');
   const canSubmit = amountValid && !overHeld && !hasOpenOfKind;
 
+  async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // lets picking the same file again after Remove still fire onChange
+    if (!file) return;
+    setImageError(null);
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      setImageError(t('requests.imageInvalidType', 'Must be a PNG, JPEG, or WebP image'));
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      setImageError(t('requests.imageTooLarge', 'That image is larger than 2MB'));
+      return;
+    }
+    setImage(await fileToDataUrl(file));
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
     setOkMessage(null);
     try {
-      await api.createTokenRequest({ kind, amount: parsed, note: note.trim() || undefined });
+      await api.createTokenRequest({
+        kind,
+        amount: parsed,
+        note: note.trim() || undefined,
+        image: image ?? undefined,
+      });
       setOkMessage(
         kind === 'TOP_UP'
           ? t('requests.askedAgent', 'Asked your Agent for {n} tokens.', { n: parsed.toLocaleString() })
@@ -85,6 +122,8 @@ export function TokenRequestsCard({
       );
       setAmount('');
       setNote('');
+      setImage(null);
+      setImageError(null);
       await load();
       onChanged?.();
     } catch (err) {
@@ -168,6 +207,40 @@ export function TokenRequestsCard({
             />
           </Field>
 
+          <Field
+            label={t('requests.imageLabel', 'Attach an image (optional)')}
+            hint={imageError ?? t('requests.imageHint', 'PNG, JPEG, or WebP, up to 2MB')}
+            hintTone={imageError ? 'bad' : undefined}
+          >
+            {image ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <img
+                  src={image}
+                  alt=""
+                  style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--border)' }}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => {
+                    setImage(null);
+                    setImageError(null);
+                  }}
+                >
+                  {t('requests.removeImage', 'Remove')}
+                </Button>
+              </div>
+            ) : (
+              <input
+                className="input"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(e) => void handleImageChange(e)}
+                aria-invalid={Boolean(imageError)}
+              />
+            )}
+          </Field>
+
           <Button type="submit" variant="primary" disabled={!canSubmit || submitting}>
             {submitting ? t('requests.sending', 'Sending…') : t('requests.sendRequest', 'Send request')}
           </Button>
@@ -196,6 +269,7 @@ export function TokenRequestsCard({
                 <th style={{ textAlign: 'right' }}>{t('predict.stake', 'Amount')}</th>
                 <th>{t('requests.statusColumn', 'Status')}</th>
                 <th>{t('requests.noteColumn', 'Note')}</th>
+                <th>{t('requests.imageColumn', 'Image')}</th>
                 <th>{t('requests.reviewerNoteColumn', 'Reviewer note')}</th>
                 <th>{t('requests.raisedColumn', 'Raised')}</th>
                 <th />
@@ -210,6 +284,19 @@ export function TokenRequestsCard({
                     <span className={statusBadgeClass(r.status)}>{statusLabel(t, r.status)}</span>
                   </td>
                   <td className="cell-muted">{r.note ?? '—'}</td>
+                  <td>
+                    {r.imageMimeType ? (
+                      <a href={api.tokenRequestImageUrl(r.id)} target="_blank" rel="noreferrer">
+                        <img
+                          src={api.tokenRequestImageUrl(r.id)}
+                          alt={t('requests.viewImage', 'View')}
+                          style={{ width: 32, height: 32, objectFit: 'cover', borderRadius: 6, border: '1px solid var(--border)' }}
+                        />
+                      </a>
+                    ) : (
+                      <span className="cell-muted">—</span>
+                    )}
+                  </td>
                   <td className="cell-muted">{r.resolutionNote ?? '—'}</td>
                   <td className="cell-muted">{formatDate(r.createdAt)}</td>
                   <td>

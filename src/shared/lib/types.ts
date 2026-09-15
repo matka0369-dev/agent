@@ -157,6 +157,11 @@ export interface TokenRequest {
   status: TokenRequestStatus;
   amount: number;
   note: string | null;
+  /** Non-null when this request carries an attached image — the bytes
+   *  themselves are fetched separately (api.tokenRequestImageUrl) rather
+   *  than inlined in every list response. See ARCHITECTURE.md "Hard safety
+   *  boundaries" (2026-09-15 revision) for what this is for and isn't. */
+  imageMimeType: string | null;
   claimedAt: string | null;
   resolvedAt: string | null;
   resolutionNote: string | null;
