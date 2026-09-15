@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react';
+import { useLang } from '../lib/i18n';
 import { ACCOUNT_TYPE_LABEL, type AccountType } from '../lib/types';
 import { useActiveTab } from './tab-context';
 
@@ -118,9 +119,10 @@ export function RefreshButton({
   onClick: () => void;
   refreshing?: boolean;
 }) {
+  const { t } = useLang();
   return (
     <Button size="sm" onClick={onClick} disabled={refreshing}>
-      {refreshing ? 'Refreshing…' : '↻ Refresh'}
+      {refreshing ? t('common.refreshing', 'Refreshing…') : `↻ ${t('common.refresh', 'Refresh')}`}
     </Button>
   );
 }

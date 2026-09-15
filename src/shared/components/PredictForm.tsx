@@ -2,24 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import { api, ApiError } from '../lib/api';
 import { useAuth } from '../auth/AuthContext';
-import { useLang } from '../lib/i18n';
-import {
-  CLOSE_CUTOFF_TYPES,
-  OPEN_CUTOFF_TYPES,
-  PREDICTION_TYPE_LABEL,
-  type ActiveGame,
-  type PredictionType,
-} from '../lib/types';
+import { predictionTypeLabel as typeLabel, useLang } from '../lib/i18n';
+import { CLOSE_CUTOFF_TYPES, OPEN_CUTOFF_TYPES, type ActiveGame, type PredictionType } from '../lib/types';
 import { inferTypeFromInput, validatePana } from '../lib/predictionValidation';
 import { Alert, Button, Card, Empty, Field } from './ui';
-
-// PREDICTION_TYPE_LABEL is shared with admin-facing components (result
-// entry, rate cards) that never localize, so it stays English-only there —
-// this looks up the same type's name in the active language instead,
-// falling back to that canonical English label.
-function typeLabel(t: ReturnType<typeof useLang>['t'], type: PredictionType): string {
-  return t(`type.${type}`, PREDICTION_TYPE_LABEL[type]);
-}
 
 // Half Sangam isn't offered here — Players can no longer start a new one,
 // though nothing else about it changes: existing Half Sangam predictions,

@@ -718,6 +718,75 @@ h3 {
   color: var(--text-subtle);
 }
 
+/* ---------- Prediction cards (prediction history, one per bet) ---------- */
+
+.prediction-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.prediction-card {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: var(--surface);
+}
+
+/* Same reasoning as the game card's own open/upcoming/closed tints — a
+   quiet color wash reads faster than the outcome badge alone once there
+   are more than a couple of rows on screen. Pending gets no tint at all
+   (the plain default above): only WON/LOST are resolved outcomes worth a
+   background, and everything else — the majority of any live history —
+   should look exactly like it always did rather than a third color. */
+.prediction-card--won {
+  background: var(--success-bg);
+  border-color: var(--success-bg);
+}
+.prediction-card--lost {
+  background: var(--danger-bg);
+  border-color: var(--danger-bg);
+}
+
+.prediction-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.prediction-card__game {
+  font-weight: 650;
+  font-size: 0.95rem;
+}
+
+.prediction-card__pick {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.prediction-card__meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px 14px;
+}
+
+.prediction-card__meta-label {
+  color: var(--text-subtle);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 2px;
+}
+
+.prediction-card__meta-value {
+  color: var(--text);
+  font-weight: 550;
+  font-size: 0.86rem;
+}
+
 /* ---------- Bet type chips (Player's Predict page) ---------- */
 
 .type-chip-group {

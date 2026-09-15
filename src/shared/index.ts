@@ -35,7 +35,7 @@ export { PredictForm } from './components/PredictForm';
 export { AdminBusinessCard } from './components/AdminBusinessCard';
 
 export { useRoutedTabs } from './lib/useRoutedTabs';
-export { LangProvider, useLang, savedLang, LANGUAGES, type Lang } from './lib/i18n';
+export { LangProvider, useLang, savedLang, predictionTypeLabel, LANGUAGES, type Lang } from './lib/i18n';
 
 export {
   Alert,
