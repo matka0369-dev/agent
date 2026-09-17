@@ -427,7 +427,7 @@ export const api = {
     }),
 
   /** Past results for one game, most recent first — the Predict page's
-   *  "chart" button. `limit` defaults to 60 days server-side. */
+   *  "chart" button. `limit` defaults to 45 days server-side. */
   gameHistory: (gameId: string, limit?: number) =>
     predictionRequest<HistoryRound[]>(`/games/${gameId}/history${limit ? `?limit=${limit}` : ''}`),
 };
