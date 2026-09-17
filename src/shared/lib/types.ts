@@ -467,6 +467,16 @@ export interface ActiveGame {
   closePana: string | null;
 }
 
+/** One past day's result for a single game — the Predict page's "chart"
+ *  button. Same open/close-pana shape as ActiveGame's today, just for a
+ *  day that's already resolved (or not — a day this recent may still have
+ *  one or both sides null, same as today's own card). */
+export interface HistoryRound {
+  date: string;
+  openPana: string | null;
+  closePana: string | null;
+}
+
 /** Blast radius of toggling an account's status, shown before confirming. */
 export interface StatusImpact {
   username: string;

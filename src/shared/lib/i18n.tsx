@@ -156,6 +156,12 @@ const en: Dict = {
   'requests.removeImage': 'Remove',
   'requests.imageColumn': 'Image',
   'requests.viewImage': 'View',
+  'predict.viewChart': 'Chart',
+  'predict.chartTitle': '{name} — chart',
+  'predict.chartDesc': 'Past results, most recent first.',
+  'predict.chartEmpty': 'No results yet for this game.',
+  'predict.chartDate': 'Date',
+  'common.close': 'Close',
 };
 
 const hi: Dict = {
@@ -293,6 +299,12 @@ const hi: Dict = {
   'requests.removeImage': 'हटाएं',
   'requests.imageColumn': 'इमेज',
   'requests.viewImage': 'देखें',
+  'predict.viewChart': 'चार्ट',
+  'predict.chartTitle': '{name} — चार्ट',
+  'predict.chartDesc': 'पिछले परिणाम, सबसे हाल का पहले।',
+  'predict.chartEmpty': 'इस गेम के लिए अभी तक कोई परिणाम नहीं।',
+  'predict.chartDate': 'तारीख',
+  'common.close': 'बंद करें',
 };
 
 const mr: Dict = {
@@ -430,6 +442,12 @@ const mr: Dict = {
   'requests.removeImage': 'काढा',
   'requests.imageColumn': 'इमेज',
   'requests.viewImage': 'पहा',
+  'predict.viewChart': 'चार्ट',
+  'predict.chartTitle': '{name} — चार्ट',
+  'predict.chartDesc': 'मागील निकाल, सर्वात अलीकडचा आधी.',
+  'predict.chartEmpty': 'या गेमसाठी अजून कोणताही निकाल नाही.',
+  'predict.chartDate': 'तारीख',
+  'common.close': 'बंद करा',
 };
 
 const te: Dict = {
@@ -567,6 +585,12 @@ const te: Dict = {
   'requests.removeImage': 'తీసివేయండి',
   'requests.imageColumn': 'చిత్రం',
   'requests.viewImage': 'చూడండి',
+  'predict.viewChart': 'చార్ట్',
+  'predict.chartTitle': '{name} — చార్ట్',
+  'predict.chartDesc': 'గత ఫలితాలు, ఇటీవలివి ముందుగా.',
+  'predict.chartEmpty': 'ఈ గేమ్‌కు ఇంకా ఫలితాలు లేవు.',
+  'predict.chartDate': 'తేదీ',
+  'common.close': 'మూసివేయండి',
 };
 
 const ta: Dict = {
@@ -705,6 +729,12 @@ const ta: Dict = {
   'requests.removeImage': 'அகற்று',
   'requests.imageColumn': 'படம்',
   'requests.viewImage': 'பார்',
+  'predict.viewChart': 'சார்ட்',
+  'predict.chartTitle': '{name} — சார்ட்',
+  'predict.chartDesc': 'கடந்த முடிவுகள், சமீபத்தியது முதலில்.',
+  'predict.chartEmpty': 'இந்த விளையாட்டிற்கு இன்னும் முடிவுகள் இல்லை.',
+  'predict.chartDate': 'தேதி',
+  'common.close': 'மூடு',
 };
 
 const kn: Dict = {
@@ -842,6 +872,12 @@ const kn: Dict = {
   'requests.removeImage': 'ತೆಗೆದುಹಾಕಿ',
   'requests.imageColumn': 'ಚಿತ್ರ',
   'requests.viewImage': 'ನೋಡಿ',
+  'predict.viewChart': 'ಚಾರ್ಟ್',
+  'predict.chartTitle': '{name} — ಚಾರ್ಟ್',
+  'predict.chartDesc': 'ಹಿಂದಿನ ಫಲಿತಾಂಶಗಳು, ಇತ್ತೀಚಿನದು ಮೊದಲು.',
+  'predict.chartEmpty': 'ಈ ಆಟಕ್ಕೆ ಇನ್ನೂ ಫಲಿತಾಂಶಗಳಿಲ್ಲ.',
+  'predict.chartDate': 'ದಿನಾಂಕ',
+  'common.close': 'ಮುಚ್ಚಿ',
 };
 
 const DICTS: Record<Lang, Dict> = { en, hi, te, ta, kn, mr };

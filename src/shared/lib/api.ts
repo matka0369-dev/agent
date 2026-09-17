@@ -11,6 +11,7 @@ import type {
   GameForAdmin,
   GameHoliday,
   GameStatus,
+  HistoryRound,
   LedgerEntry,
   MyRates,
   Permission,
@@ -424,4 +425,9 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(body),
     }),
+
+  /** Past results for one game, most recent first — the Predict page's
+   *  "chart" button. `limit` defaults to 60 days server-side. */
+  gameHistory: (gameId: string, limit?: number) =>
+    predictionRequest<HistoryRound[]>(`/games/${gameId}/history${limit ? `?limit=${limit}` : ''}`),
 };

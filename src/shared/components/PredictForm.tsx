@@ -3,9 +3,15 @@ import { Link, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import { api, ApiError } from '../lib/api';
 import { useAuth } from '../auth/AuthContext';
 import { predictionTypeLabel as typeLabel, useLang } from '../lib/i18n';
-import { CLOSE_CUTOFF_TYPES, OPEN_CUTOFF_TYPES, type ActiveGame, type PredictionType } from '../lib/types';
+import {
+  CLOSE_CUTOFF_TYPES,
+  OPEN_CUTOFF_TYPES,
+  type ActiveGame,
+  type HistoryRound,
+  type PredictionType,
+} from '../lib/types';
 import { inferTypeFromInput, validatePana } from '../lib/predictionValidation';
-import { Alert, Button, Card, Empty, Field } from './ui';
+import { Alert, Button, Card, Empty, Field, TableWrap } from './ui';
 
 // Half Sangam isn't offered here — Players can no longer start a new one,
 // though nothing else about it changes: existing Half Sangam predictions,
@@ -283,6 +289,110 @@ function AmountInput({
  * Sangam is the one shape that can't come from a bare number (it's two
  * panas), so it gets its own pair of fields below, alongside rather than
  * inside the generic form. */
+
+// Parses a bare "YYYY-MM-DD" (what the history endpoint sends) as calendar
+// components directly rather than `new Date(dateStr)`, which parses it as
+// UTC midnight — displaying that in a timezone ahead of UTC (Asia/Kolkata
+// included) would show the *previous* day.
+function formatChartDate(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, { day: '2-digit', month: 'short' });
+}
+
+/** The Predict page's "chart" button: a game's past results, most recent
+ *  first — the traditional Matka panel of which numbers came up on which
+ *  past days, fetched fresh every time it's opened rather than cached
+ *  alongside the live game list. */
+function GameHistoryModal({ game, onClose }: { game: ActiveGame; onClose: () => void }) {
+  const { t } = useLang();
+  const [rounds, setRounds] = useState<HistoryRound[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await api.gameHistory(game.gameId);
+        if (!cancelled) setRounds(data);
+      } catch (err) {
+        if (!cancelled) setError(err instanceof ApiError ? err.message : String(err));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [game.gameId]);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = prev;
+    };
+  }, [onClose]);
+
+  return (
+    <div className="modal__backdrop" onClick={onClose}>
+      <div
+        className="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('predict.chartTitle', '{name} — chart', { name: game.name })}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className="modal__head">
+          <h2>{t('predict.chartTitle', '{name} — chart', { name: game.name })}</h2>
+          <div className="card__desc">{t('predict.chartDesc', 'Past results, most recent first.')}</div>
+        </header>
+
+        <div className="modal__body">
+          {error ? (
+            <Alert tone="error">{error}</Alert>
+          ) : rounds === null ? (
+            <Empty>{t('common.loading', 'Loading…')}</Empty>
+          ) : rounds.length === 0 ? (
+            <Empty>{t('predict.chartEmpty', 'No results yet for this game.')}</Empty>
+          ) : (
+            <TableWrap>
+              <thead>
+                <tr>
+                  <th>{t('predict.chartDate', 'Date')}</th>
+                  <th>{t('predict.openGroup', 'Open')}</th>
+                  <th>{t('type.JODI', 'Jodi')}</th>
+                  <th>{t('predict.closeGroup', 'Close')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rounds.map((r) => (
+                  <tr key={r.date}>
+                    <td className="cell-muted">{formatChartDate(r.date)}</td>
+                    <td className="cell-num">{r.openPana ?? '—'}</td>
+                    <td className="cell-num">
+                      {r.openPana && r.closePana
+                        ? `${singleFromPana(r.openPana)}${singleFromPana(r.closePana)}`
+                        : '—'}
+                    </td>
+                    <td className="cell-num">{r.closePana ?? '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </TableWrap>
+          )}
+        </div>
+
+        <footer className="modal__foot">
+          <Button onClick={onClose}>{t('common.close', 'Close')}</Button>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
 function GameBetForm({
   games,
   now,
@@ -314,6 +424,8 @@ function GameBetForm({
   const [sangamError, setSangamError] = useState<string | null>(null);
   const [sangamOkMessage, setSangamOkMessage] = useState<string | null>(null);
   const [sangamSubmitting, setSangamSubmitting] = useState(false);
+
+  const [chartOpen, setChartOpen] = useState(false);
 
   const typeStates = useMemo(() => {
     const map = new Map<PredictionType, number>();
@@ -474,11 +586,18 @@ function GameBetForm({
           : undefined
       }
       action={
-        <button type="button" className="btn btn--ghost btn--sm" onClick={() => navigate('/')}>
-          ← {t('predict.backAllGames', 'All games')}
-        </button>
+        <div className="btn-row">
+          <button type="button" className="btn btn--ghost btn--sm" onClick={() => setChartOpen(true)}>
+            📊 {t('predict.viewChart', 'Chart')}
+          </button>
+          <button type="button" className="btn btn--ghost btn--sm" onClick={() => navigate('/')}>
+            ← {t('predict.backAllGames', 'All games')}
+          </button>
+        </div>
       }
     >
+      {chartOpen && <GameHistoryModal game={game} onClose={() => setChartOpen(false)} />}
+
       {!anyTypeOpen && (
         <Alert tone="error">
           {t('predict.closedForToday', '{name} is closed for today — check back tomorrow.', { name: game.name })}
