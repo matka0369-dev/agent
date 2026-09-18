@@ -831,6 +831,91 @@ h3 {
   cursor: not-allowed;
 }
 
+/* ---------- Number picker (Predict page: tap a number instead of typing) ---------- */
+
+.number-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.number-grid--jodi {
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(10, 1fr);
+  grid-auto-flow: column;
+}
+.number-grid--pana {
+  grid-template-columns: repeat(auto-fill, minmax(46px, 1fr));
+}
+.number-picker__block-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-subtle);
+  font-weight: 600;
+  margin: 10px 0 6px;
+}
+.number-chip {
+  padding: 8px 0;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.86rem;
+  font-weight: 600;
+  font-family: var(--mono);
+  text-align: center;
+  cursor: pointer;
+}
+.number-chip:hover:not(:disabled) {
+  border-color: var(--border-strong);
+}
+.number-chip--selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.number-chip:disabled {
+  background: var(--surface-2);
+  color: var(--text-subtle);
+  border-color: var(--surface-2);
+  cursor: not-allowed;
+}
+
+.pana-group {
+  margin-bottom: 10px;
+}
+.pana-group__summary {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-subtle);
+  font-weight: 600;
+  margin: 10px 0 6px;
+  cursor: pointer;
+  list-style: none;
+}
+.pana-group__summary::-webkit-details-marker {
+  display: none;
+}
+.pana-group__summary::before {
+  content: '▸';
+  display: inline-block;
+  width: 1em;
+  color: var(--text-muted);
+}
+.pana-group[open] > .pana-group__summary::before {
+  content: '▾';
+}
+.pana-group__count {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+}
+.pana-group .number-grid--pana {
+  margin-top: 4px;
+}
+
 /* Live countdown for whichever bet type is currently selected — ticks every
    second alongside the chips above it, so the window that actually governs
    the Place-prediction button is never just "one of the two lines up top". */

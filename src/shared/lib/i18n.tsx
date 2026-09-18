@@ -162,6 +162,12 @@ const en: Dict = {
   'predict.chartEmpty': 'No results yet for this game.',
   'predict.chartDate': 'Date',
   'common.close': 'Close',
+  'predict.familySingle': 'Single',
+  'predict.familyJodi': 'Jodi',
+  'predict.familyPana': 'Pana',
+  'predict.singlePana': 'Single Pana',
+  'predict.doublePana': 'Double Pana',
+  'predict.triplePana': 'Triple Pana',
 };
 
 const hi: Dict = {
@@ -305,6 +311,12 @@ const hi: Dict = {
   'predict.chartEmpty': 'इस गेम के लिए अभी तक कोई परिणाम नहीं।',
   'predict.chartDate': 'तारीख',
   'common.close': 'बंद करें',
+  'predict.familySingle': 'सिंगल',
+  'predict.familyJodi': 'जोड़ी',
+  'predict.familyPana': 'पाना',
+  'predict.singlePana': 'सिंगल पाना',
+  'predict.doublePana': 'डबल पाना',
+  'predict.triplePana': 'ट्रिपल पाना',
 };
 
 const mr: Dict = {
@@ -448,6 +460,12 @@ const mr: Dict = {
   'predict.chartEmpty': 'या गेमसाठी अजून कोणताही निकाल नाही.',
   'predict.chartDate': 'तारीख',
   'common.close': 'बंद करा',
+  'predict.familySingle': 'सिंगल',
+  'predict.familyJodi': 'जोडी',
+  'predict.familyPana': 'पाना',
+  'predict.singlePana': 'सिंगल पाना',
+  'predict.doublePana': 'डबल पाना',
+  'predict.triplePana': 'ट्रिपल पाना',
 };
 
 const te: Dict = {
@@ -591,6 +609,12 @@ const te: Dict = {
   'predict.chartEmpty': 'ఈ గేమ్‌కు ఇంకా ఫలితాలు లేవు.',
   'predict.chartDate': 'తేదీ',
   'common.close': 'మూసివేయండి',
+  'predict.familySingle': 'సింగిల్',
+  'predict.familyJodi': 'జోడీ',
+  'predict.familyPana': 'పానా',
+  'predict.singlePana': 'సింగిల్ పానా',
+  'predict.doublePana': 'డబుల్ పానా',
+  'predict.triplePana': 'ట్రిపుల్ పానా',
 };
 
 const ta: Dict = {
@@ -735,6 +759,12 @@ const ta: Dict = {
   'predict.chartEmpty': 'இந்த விளையாட்டிற்கு இன்னும் முடிவுகள் இல்லை.',
   'predict.chartDate': 'தேதி',
   'common.close': 'மூடு',
+  'predict.familySingle': 'சிங்கிள்',
+  'predict.familyJodi': 'ஜோடி',
+  'predict.familyPana': 'பானா',
+  'predict.singlePana': 'சிங்கிள் பானா',
+  'predict.doublePana': 'டபுள் பானா',
+  'predict.triplePana': 'ட்ரிபுள் பானா',
 };
 
 const kn: Dict = {
@@ -878,6 +908,12 @@ const kn: Dict = {
   'predict.chartEmpty': 'ಈ ಆಟಕ್ಕೆ ಇನ್ನೂ ಫಲಿತಾಂಶಗಳಿಲ್ಲ.',
   'predict.chartDate': 'ದಿನಾಂಕ',
   'common.close': 'ಮುಚ್ಚಿ',
+  'predict.familySingle': 'ಸಿಂಗಲ್',
+  'predict.familyJodi': 'ಜೋಡಿ',
+  'predict.familyPana': 'ಪಾನಾ',
+  'predict.singlePana': 'ಸಿಂಗಲ್ ಪಾನಾ',
+  'predict.doublePana': 'ಡಬಲ್ ಪಾನಾ',
+  'predict.triplePana': 'ಟ್ರಿಪಲ್ ಪಾನಾ',
 };
 
 const DICTS: Record<Lang, Dict> = { en, hi, te, ta, kn, mr };

@@ -11,6 +11,7 @@ import {
   type PredictionType,
 } from '../lib/types';
 import { inferTypeFromInput, validatePana } from '../lib/predictionValidation';
+import { NumberPicker } from './NumberPicker';
 import { Alert, Button, Card, Empty, Field, TableWrap } from './ui';
 
 // Half Sangam isn't offered here — Players can no longer start a new one,
@@ -654,18 +655,20 @@ function GameBetForm({
               </div>
             )}
 
-            <div className="form-row">
-              <Field label={t('predict.yourPick', 'Number')} hint={numberHint} hintTone={numberError ? 'bad' : inferredType ? 'ok' : undefined}>
-                <input
-                  className="input"
-                  value={number}
-                  onChange={(e) => setNumber(e.target.value.trim())}
-                  maxLength={3}
-                  placeholder="123"
-                  aria-invalid={Boolean(numberError)}
-                />
-              </Field>
+            <Field label={t('predict.yourPick', 'Number')} hint={numberHint} hintTone={numberError ? 'bad' : inferredType ? 'ok' : undefined}>
+              <input
+                className="input"
+                value={number}
+                onChange={(e) => setNumber(e.target.value.trim())}
+                maxLength={3}
+                placeholder="123"
+                aria-invalid={Boolean(numberError)}
+              />
+            </Field>
 
+            <NumberPicker showJodi={phase === 'open'} value={number} onSelect={setNumber} />
+
+            {inferredType && !numberError && (
               <Field
                 label={t('predict.stake', 'Amount')}
                 hint={t('predict.stakeHint', 'Between ₹{min} and ₹{max}', {
@@ -681,7 +684,7 @@ function GameBetForm({
                   invalid={Boolean(amount) && amountInvalid}
                 />
               </Field>
-            </div>
+            )}
 
             <Button type="submit" variant="primary" disabled={!canSubmit || submitting}>
               {submitting

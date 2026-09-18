@@ -5,7 +5,7 @@
 // Go service or vice versa — that's the point.
 import type { PredictionType } from './types';
 
-function panaDigitValue(c: string): number {
+export function panaDigitValue(c: string): number {
   return c === '0' ? 10 : Number(c);
 }
 
@@ -14,25 +14,49 @@ function isDigit(c: string): boolean {
 }
 
 // 3 digits, non-decreasing under panaDigitValue ('0' sorts as 10).
-function isValidPana(s: string): boolean {
+export function isValidPana(s: string): boolean {
   if (!/^[0-9]{3}$/.test(s)) return false;
   const [a, b, c] = [...s].map(panaDigitValue);
   return a <= b && b <= c;
 }
 
-function isSinglePana(s: string): boolean {
+export function isSinglePana(s: string): boolean {
   return isValidPana(s) && s[0] !== s[1] && s[1] !== s[2] && s[0] !== s[2];
 }
 
-function isDoublePana(s: string): boolean {
+export function isDoublePana(s: string): boolean {
   if (!isValidPana(s)) return false;
   const allDistinct = s[0] !== s[1] && s[1] !== s[2] && s[0] !== s[2];
   const allSame = s[0] === s[1] && s[1] === s[2];
   return !allDistinct && !allSame;
 }
 
-function isTriplePana(s: string): boolean {
+export function isTriplePana(s: string): boolean {
   return isValidPana(s) && s[0] === s[1] && s[1] === s[2];
+}
+
+/**
+ * Every valid pana of one kind, ascending under panaDigitValue ('0' sorts
+ * last) — what a "pick from the chart" picker shows instead of asking a
+ * Player to type a 3-digit combination from memory. Small enough (120
+ * single / 90 double / 10 triple) to brute-force over all 1000 3-digit
+ * strings rather than generate combinatorially; this is called once per
+ * kind and memoized by the caller, not per render.
+ */
+export function generatePanas(kind: 'single' | 'double' | 'triple'): string[] {
+  const test = kind === 'single' ? isSinglePana : kind === 'double' ? isDoublePana : isTriplePana;
+  const out: string[] = [];
+  for (let n = 0; n <= 999; n++) {
+    const s = String(n).padStart(3, '0');
+    if (test(s)) out.push(s);
+  }
+  return out.sort((x, y) => {
+    for (let i = 0; i < 3; i++) {
+      const d = panaDigitValue(x[i]) - panaDigitValue(y[i]);
+      if (d !== 0) return d;
+    }
+    return 0;
+  });
 }
 
 /** Returns null when valid, else a message explaining the expected format. */
