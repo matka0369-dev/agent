@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  AgentPredictionsCard,
   Alert,
   Card,
   CreateUserForm,
@@ -67,6 +68,7 @@ export function Dashboard() {
       ...(isNativeAgent ? [{ id: 'move-tokens', label: 'Move tokens' }] : []),
       { id: 'rates', label: 'Given & giving' },
       { id: 'predictions', label: 'Predictions' },
+      { id: 'totals', label: 'Prediction totals' },
       { id: 'settlements', label: 'Settlements' },
       { id: 'requests', label: 'Token requests' },
       { id: 'ledger', label: 'Token history' },
@@ -174,6 +176,11 @@ export function Dashboard() {
 
       <Section id="predictions">
         <SubtreePredictionsCard title="Predictions" desc="Every prediction placed by your players." />
+      </Section>
+
+      {/* The Admin's per-number book, over your own players only. */}
+      <Section id="totals">
+        <AgentPredictionsCard />
       </Section>
 
       {/* The same rows the Admin sees, from your side — the two positions

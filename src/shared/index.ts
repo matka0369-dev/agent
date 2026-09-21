@@ -27,6 +27,7 @@ export { PredictionVolumeCard } from './components/PredictionVolumeCard';
 export { PredictionsTable } from './components/PredictionsTable';
 export { SubtreePredictionsCard } from './components/SubtreePredictionsCard';
 export { AdminPredictionsCard } from './components/AdminPredictionsCard';
+export { AgentPredictionsCard } from './components/AgentPredictionsCard';
 export { AgentSummaryCard } from './components/AgentSummaryCard';
 export { SettlementsCard } from './components/SettlementsCard';
 export { TransferTokensCard } from './components/TransferTokensCard';
