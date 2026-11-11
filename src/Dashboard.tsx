@@ -22,6 +22,7 @@ import {
   type Role,
   type UserSummary,
 } from './shared';
+import { PlayerInvites } from './PlayerInvites';
 
 // Roles an Agent may delegate to its own staff — must match the server-side
 // allow-list in AGENT_STAFF_ALLOWED_PERMISSIONS (core-service). Filtering
@@ -64,6 +65,7 @@ export function Dashboard() {
     () => [
       { id: 'overview', label: 'Overview' },
       ...(canCreatePlayers ? [{ id: 'create', label: 'Create player' }] : []),
+      ...(isNativeAgent ? [{ id: 'invites', label: 'Invite players' }] : []),
       { id: 'players', label: 'Your players' },
       ...(isNativeAgent ? [{ id: 'move-tokens', label: 'Move tokens' }] : []),
       { id: 'rates', label: 'Given & giving' },
@@ -147,6 +149,12 @@ export function Dashboard() {
       {canCreatePlayers && (
         <Section id="create">
           <CreateUserForm allowedTypes={['PLAYER']} onCreated={() => void load()} />
+        </Section>
+      )}
+
+      {isNativeAgent && (
+        <Section id="invites">
+          <PlayerInvites players={players} onChanged={() => void load()} />
         </Section>
       )}
 
