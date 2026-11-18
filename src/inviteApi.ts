@@ -1,4 +1,3 @@
-import type { UserSummary } from './shared';
 
 // A small client of its own rather than a method on the shared `api`: the
 // shared client is vendored from the monorepo and overwritten on every sync,
@@ -46,6 +45,5 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
 export const inviteApi = {
   me: () => call<MyInvite>('GET', '/player-access/me'),
   setWhatsapp: (whatsappNumber: string) => call<MyInvite>('PUT', '/player-access/me', { whatsappNumber }),
-  invitePlayer: (phone: string) => call<LoginLink & { user: UserSummary }>('POST', '/player-access/players', { phone }),
   reissue: (playerId: string) => call<LoginLink>('POST', `/player-access/${playerId}/login-link`),
 };

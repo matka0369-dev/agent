@@ -65,7 +65,7 @@ export function Dashboard() {
     () => [
       { id: 'overview', label: 'Overview' },
       ...(canCreatePlayers ? [{ id: 'create', label: 'Create player' }] : []),
-      ...(isNativeAgent ? [{ id: 'invites', label: 'Invite players' }] : []),
+      ...(isNativeAgent ? [{ id: 'invites', label: 'Player sign-up' }] : []),
       { id: 'players', label: 'Your players' },
       ...(isNativeAgent ? [{ id: 'move-tokens', label: 'Move tokens' }] : []),
       { id: 'rates', label: 'Given & giving' },
@@ -154,7 +154,7 @@ export function Dashboard() {
 
       {isNativeAgent && (
         <Section id="invites">
-          <PlayerInvites players={players} onChanged={() => void load()} />
+          <PlayerInvites players={players} />
         </Section>
       )}
 

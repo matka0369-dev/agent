@@ -62,19 +62,19 @@ function LinkPanel({
 }
 
 /**
- * How an Agent brings players in and gets them back in:
- *  1. publish a WhatsApp number — the Register button in the player app opens
- *     a chat with it;
- *  2. when a player messages, create them from their number and send a
- *     one-time sign-in link;
- *  3. for a lost phone or forgotten PIN, issue a new link.
- * Nobody types a password; the player picks a PIN on their own phone.
+ * How an Agent gets players in the door and back in:
+ *  1. share the invite link (or an APK built with its code) — players sign
+ *     themselves up with a name, phone and PIN, and land under this Agent;
+ *  2. publish a WhatsApp number — the player app shows it to anyone who is
+ *     stuck (a number that's already registered, a locked phone);
+ *  3. for a lost phone or forgotten PIN, issue that player a new link.
+ * The Agent creates nobody and sets nobody's PIN. Odds stay the Agent's: players
+ * read this Agent's rate card.
  */
-export function PlayerInvites({ players, onChanged }: { players: UserSummary[]; onChanged: () => void }) {
+export function PlayerInvites({ players }: { players: UserSummary[] }) {
   const [invite, setInvite] = useState<MyInvite | null>(null);
   const [number, setNumber] = useState('');
   const [editing, setEditing] = useState(false);
-  const [phone, setPhone] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [issued, setIssued] = useState<{ heading: string; link: LoginLink; phone: string | null } | null>(null);
@@ -115,18 +115,6 @@ export function PlayerInvites({ players, onChanged }: { players: UserSummary[]; 
       setEditing(false);
     });
 
-  const createPlayer = () =>
-    run(async () => {
-      const res = await inviteApi.invitePlayer(phone);
-      setIssued({
-        heading: `Sign-in link for ${res.user.username}`,
-        link: { url: res.url, expiresAt: res.expiresAt },
-        phone: asWhatsappNumber(phone),
-      });
-      setPhone('');
-      onChanged();
-    });
-
   const reissue = (p: UserSummary) => {
     if (!window.confirm(`Give ${p.username} a new link? This signs them out everywhere and replaces their PIN.`)) return;
     void run(async () => {
@@ -140,9 +128,14 @@ export function PlayerInvites({ players, onChanged }: { players: UserSummary[]; 
       {error && <Alert tone="error">{error}</Alert>}
 
       <Card
-        title="Your WhatsApp"
-        desc="The number the Register button opens in your players' app. Include the country code, e.g. 919876543210."
+        title="Player sign-up"
+        desc="Players create their own account in the app — they enter a name, a phone number and choose a 4-digit PIN. You don't need to add anyone."
       >
+        <div className="field__label" style={{ marginTop: 4 }}>Your WhatsApp (for players who need help)</div>
+        <div className="note" style={{ marginBottom: 8 }}>
+          Shown in the app to a player whose number is already registered or whose phone is locked. Include the
+          country code, e.g. 919876543210.
+        </div>
         {editing || !invite?.whatsappNumber ? (
           <>
             <Field label="WhatsApp number">
@@ -171,7 +164,7 @@ export function PlayerInvites({ players, onChanged }: { players: UserSummary[]; 
         )}
         {invite && (
           <div style={{ marginTop: 16 }}>
-            <div className="field__label">Your invite link</div>
+            <div className="field__label">Your sign-up link — share it with players</div>
             <div className="note" style={{ wordBreak: 'break-all' }}>
               {invite.inviteUrl}
             </div>
@@ -183,24 +176,6 @@ export function PlayerInvites({ players, onChanged }: { players: UserSummary[]; 
       </Card>
 
       {issued && <LinkPanel {...issued} onClose={() => setIssued(null)} />}
-
-      <Card
-        title="New player"
-        desc="When someone messages you to register, enter their WhatsApp number. This creates their account and gives you a sign-in link for them."
-      >
-        <Field label="Player's WhatsApp number" hint="With country code, e.g. 919876543210.">
-          <input
-            className="input"
-            inputMode="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="919876543210"
-          />
-        </Field>
-        <Button variant="primary" disabled={busy || phone.trim() === ''} onClick={() => void createPlayer()}>
-          Create player + get link
-        </Button>
-      </Card>
 
       <Card title="Lost phone or forgot PIN?" desc="Give a player a new link. It signs them out everywhere and replaces their PIN." flush>
         {players.length === 0 ? (
