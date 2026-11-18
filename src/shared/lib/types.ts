@@ -53,6 +53,8 @@ export interface UserSummary {
   agentShare: number | null;
   /** Slice applied to Agents this Admin creates. Only set on ADMIN. */
   defaultAgentShare: number | null;
+  /** Roles held (staff accounts). */
+  roles?: { role: { id: string; name: string } }[];
 }
 
 export type BetType =
@@ -98,6 +100,7 @@ export type LedgerSource =
   | 'PREDICTION_DEBIT'
   | 'PREDICTION_STAKE_IN'
   | 'PREDICTION_PAYOUT'
+  | 'AGENT_PAYOUT'
   | 'RESULT_CORRECTION'
   | 'TOKEN_SURRENDER';
 
@@ -122,6 +125,7 @@ export const LEDGER_SOURCE_LABEL: Record<LedgerSource, string> = {
   PREDICTION_DEBIT: 'Stake',
   PREDICTION_STAKE_IN: 'Stake in',
   PREDICTION_PAYOUT: 'Payout',
+  AGENT_PAYOUT: 'Agent payout',
   RESULT_CORRECTION: 'Correction',
   TOKEN_SURRENDER: 'Surrender',
 };
@@ -135,12 +139,13 @@ export const LEDGER_WALLET_LABEL: Record<LedgerWallet, string> = {
 // Token requests — a Player asking for a balance change, in-system
 // ---------------------------------------------------------------------------
 
-export type TokenRequestKind = 'TOP_UP' | 'SURRENDER';
+export type TokenRequestKind = 'TOP_UP' | 'SURRENDER' | 'RETURN';
 export type TokenRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
 
 export const TOKEN_REQUEST_KIND_LABEL: Record<TokenRequestKind, string> = {
   TOP_UP: 'Top-up',
   SURRENDER: 'Surrender',
+  RETURN: 'Return',
 };
 
 /**
@@ -153,6 +158,8 @@ export const TOKEN_REQUEST_KIND_LABEL: Record<TokenRequestKind, string> = {
  */
 export interface TokenRequest {
   id: string;
+  /** Short code carried in the player's WhatsApp message. Null on very old rows. */
+  shortCode: string | null;
   kind: TokenRequestKind;
   status: TokenRequestStatus;
   amount: number;

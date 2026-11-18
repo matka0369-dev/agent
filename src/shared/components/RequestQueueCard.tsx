@@ -69,7 +69,7 @@ export function RequestQueueCard({ viewerId }: { viewerId?: string }) {
   return (
     <Card
       title="Token requests"
-      desc="Top-ups are approved by the Player's own Agent, out of that Agent's wallet. Surrenders are approved by an Admin and destroy the tokens — staff may claim and reject either, but never approve."
+      desc="Top-ups and returns move tokens out of / into the Agent's wallet and are approved by an Agent employee with the Finance role. Surrenders are approved by an Admin and destroy the tokens. Anyone working the queue may claim and reject."
       action={
         <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
           <Field label="">

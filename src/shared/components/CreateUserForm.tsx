@@ -153,7 +153,7 @@ export function CreateUserForm({
         ...(accountType === 'AGENT' && agentShare.trim() !== ''
           ? { agentShare: Number(agentShare) }
           : {}),
-        ...((accountType === 'AGENT' || accountType === 'PLAYER') && useCustomRates
+        ...(accountType === 'AGENT' && useCustomRates
           ? { rates: rateRows.map((r) => ({ betType: r.betType, multiplier: r.parsed })) }
           : {}),
         ...(canFund && openingBalance.trim() !== ''
@@ -353,7 +353,8 @@ export function CreateUserForm({
             half-specified card would silently mix explicit and inherited
             values, which is the exact ambiguity this option exists to
             remove. */}
-        {(accountType === 'AGENT' || accountType === 'PLAYER') && (
+        {/* Players have no rates of their own: every player of an Agent plays at that Agent's giving card. */}
+        {accountType === 'AGENT' && (
           <Field
             label="Rates"
             hint={
@@ -373,7 +374,7 @@ export function CreateUserForm({
           </Field>
         )}
 
-        {(accountType === 'AGENT' || accountType === 'PLAYER') && useCustomRates && (
+        {accountType === 'AGENT' && useCustomRates && (
           <>
             {rateLoadError && <Alert tone="error">{rateLoadError}</Alert>}
             {rateRows.length > 0 && (

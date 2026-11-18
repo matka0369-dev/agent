@@ -117,6 +117,7 @@ const en: Dict = {
   'common.loading': 'Loading…',
   'reqkind.TOP_UP': 'Top-up',
   'reqkind.SURRENDER': 'Surrender',
+  'reqkind.RETURN': 'Return',
   'requests.title': 'Ask for a balance change',
   'requests.desc':
     'Goes to your Agent (top-up) or an Admin (surrender) to review — nothing moves until they approve it.',
@@ -266,6 +267,7 @@ const hi: Dict = {
   'common.loading': 'लोड हो रहा है…',
   'reqkind.TOP_UP': 'टॉप-अप',
   'reqkind.SURRENDER': 'सरेंडर',
+  'reqkind.RETURN': 'वापसी',
   'requests.title': 'बैलेंस बदलाव का अनुरोध करें',
   'requests.desc':
     'यह आपके एजेंट (टॉप-अप) या एडमिन (सरेंडर) के पास समीक्षा के लिए जाता है — जब तक वे मंज़ूर नहीं करते, कुछ भी नहीं बदलता।',
@@ -415,6 +417,7 @@ const mr: Dict = {
   'common.loading': 'लोड होत आहे…',
   'reqkind.TOP_UP': 'टॉप-अप',
   'reqkind.SURRENDER': 'सरेंडर',
+  'reqkind.RETURN': 'परत',
   'requests.title': 'शिल्लक बदलाची विनंती करा',
   'requests.desc':
     'ही तुमच्या एजंटकडे (टॉप-अप) किंवा अ‍ॅडमिनकडे (सरेंडर) पुनरावलोकनासाठी जाते — ते मंजूर करेपर्यंत काहीही बदलत नाही.',
@@ -564,6 +567,7 @@ const te: Dict = {
   'common.loading': 'లోడ్ అవుతోంది…',
   'reqkind.TOP_UP': 'టాప్-అప్',
   'reqkind.SURRENDER': 'సరెండర్',
+  'reqkind.RETURN': 'తిరిగి ఇవ్వడం',
   'requests.title': 'బ్యాలెన్స్ మార్పు కోసం అభ్యర్థించండి',
   'requests.desc':
     'ఇది మీ ఏజెంట్ (టాప్-అప్) లేదా అడ్మిన్ (సరెండర్) వద్దకు సమీక్ష కోసం వెళుతుంది — వారు ఆమోదించే వరకు ఏమీ మారదు.',
@@ -714,6 +718,7 @@ const ta: Dict = {
   'common.loading': 'ஏற்றுகிறது…',
   'reqkind.TOP_UP': 'டாப்-அப்',
   'reqkind.SURRENDER': 'சரண்டர்',
+  'reqkind.RETURN': 'திருப்பி அளித்தல்',
   'requests.title': 'இருப்பு மாற்றத்தைக் கோரவும்',
   'requests.desc':
     'இது உங்கள் ஏஜெண்டிடம் (டாப்-அப்) அல்லது நிர்வாகியிடம் (சரண்டர்) மதிப்பாய்வுக்குச் செல்கிறது — அவர்கள் அங்கீகரிக்கும் வரை எதுவும் மாறாது.',
@@ -863,6 +868,7 @@ const kn: Dict = {
   'common.loading': 'ಲೋಡ್ ಆಗುತ್ತಿದೆ…',
   'reqkind.TOP_UP': 'ಟಾಪ್-ಅಪ್',
   'reqkind.SURRENDER': 'ಸರೆಂಡರ್',
+  'reqkind.RETURN': 'ಹಿಂತಿರುಗಿಸಿ',
   'requests.title': 'ಬ್ಯಾಲೆನ್ಸ್ ಬದಲಾವಣೆಗಾಗಿ ವಿನಂತಿಸಿ',
   'requests.desc':
     'ಇದು ನಿಮ್ಮ ಏಜೆಂಟ್‌ಗೆ (ಟಾಪ್-ಅಪ್) ಅಥವಾ ನಿರ್ವಾಹಕರಿಗೆ (ಸರೆಂಡರ್) ಪರಿಶೀಲನೆಗೆ ಹೋಗುತ್ತದೆ — ಅವರು ಅನುಮೋದಿಸುವವರೆಗೆ ಏನೂ ಬದಲಾಗುವುದಿಲ್ಲ.',
