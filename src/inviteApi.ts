@@ -7,8 +7,10 @@ const PORTAL: string | undefined = import.meta.env.VITE_PORTAL;
 
 export class InviteApiError extends Error {}
 
+export type ContactPurpose = 'support' | 'tokens';
+
 export interface MyInvite {
-  whatsappNumber: string | null;
+  contacts: Record<ContactPurpose, string | null>;
   inviteCode: string;
   inviteUrl: string;
 }
@@ -44,6 +46,7 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
 
 export const inviteApi = {
   me: () => call<MyInvite>('GET', '/player-access/me'),
-  setWhatsapp: (whatsappNumber: string) => call<MyInvite>('PUT', '/player-access/me', { whatsappNumber }),
+  setContacts: (contacts: Record<ContactPurpose, string | null>) =>
+    call<MyInvite>('PUT', '/player-access/me/contacts', contacts),
   reissue: (playerId: string) => call<LoginLink>('POST', `/player-access/${playerId}/login-link`),
 };

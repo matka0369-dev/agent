@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import qrcode from 'qrcode-generator';
 import { Alert, Button, Card, CopyButton, Empty, Field, TableWrap, type UserSummary } from './shared';
-import { inviteApi, InviteApiError, type LoginLink, type MyInvite } from './inviteApi';
+import { inviteApi, InviteApiError, type ContactPurpose, type LoginLink, type MyInvite } from './inviteApi';
 
 const errText = (e: unknown) => (e instanceof InviteApiError || e instanceof Error ? e.message : String(e));
 
@@ -65,16 +65,16 @@ function LinkPanel({
  * How an Agent gets players in the door and back in:
  *  1. share the invite link (or an APK built with its code) — players sign
  *     themselves up with a name, phone and PIN, and land under this Agent;
- *  2. publish a WhatsApp number — the player app shows it to anyone who is
- *     stuck (a number that's already registered, a locked phone);
+ *  2. publish WhatsApp numbers (help, token requests) — the player app puts a
+ *     chat button for each where it fits, and on the sign-up screen for anyone
+ *     who is stuck (a number that's already registered, a locked phone);
  *  3. for a lost phone or forgotten PIN, issue that player a new link.
  * The Agent creates nobody and sets nobody's PIN. Odds stay the Agent's: players
  * read this Agent's rate card.
  */
 export function PlayerInvites({ players }: { players: UserSummary[] }) {
   const [invite, setInvite] = useState<MyInvite | null>(null);
-  const [number, setNumber] = useState('');
-  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState<Record<ContactPurpose, string>>({ support: '', tokens: '' });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [issued, setIssued] = useState<{ heading: string; link: LoginLink; phone: string | null } | null>(null);
@@ -83,8 +83,7 @@ export function PlayerInvites({ players }: { players: UserSummary[] }) {
     try {
       const me = await inviteApi.me();
       setInvite(me);
-      setNumber(me.whatsappNumber ?? '');
-      setEditing(!me.whatsappNumber);
+      setDraft({ support: me.contacts.support ?? '', tokens: me.contacts.tokens ?? '' });
       setError(null);
     } catch (e) {
       setError(errText(e));
@@ -107,13 +106,19 @@ export function PlayerInvites({ players }: { players: UserSummary[] }) {
     }
   }
 
-  const saveNumber = () =>
+  const saveContacts = () =>
     run(async () => {
-      const me = await inviteApi.setWhatsapp(number);
+      const me = await inviteApi.setContacts({
+        support: draft.support.trim() || null,
+        tokens: draft.tokens.trim() || null,
+      });
       setInvite(me);
-      setNumber(me.whatsappNumber ?? '');
-      setEditing(false);
+      setDraft({ support: me.contacts.support ?? '', tokens: me.contacts.tokens ?? '' });
     });
+
+  const contactsChanged =
+    invite !== null &&
+    (draft.support.trim() !== (invite.contacts.support ?? '') || draft.tokens.trim() !== (invite.contacts.tokens ?? ''));
 
   const reissue = (p: UserSummary) => {
     if (!window.confirm(`Give ${p.username} a new link? This signs them out everywhere and replaces their PIN.`)) return;
@@ -131,37 +136,34 @@ export function PlayerInvites({ players }: { players: UserSummary[] }) {
         title="Player sign-up"
         desc="Players create their own account in the app — they enter a name, a phone number and choose a 4-digit PIN. You don't need to add anyone."
       >
-        <div className="field__label" style={{ marginTop: 4 }}>Your WhatsApp (for players who need help)</div>
+        <div className="field__label" style={{ marginTop: 4 }}>Your WhatsApp numbers</div>
         <div className="note" style={{ marginBottom: 8 }}>
-          Shown in the app to a player whose number is already registered or whose phone is locked. Include the
-          country code, e.g. 919876543210.
+          Players get a "chat on WhatsApp" button for each number you set, in the place it fits. Include the country
+          code, e.g. 919876543210.
         </div>
-        {editing || !invite?.whatsappNumber ? (
-          <>
-            <Field label="WhatsApp number">
-              <input
-                className="input"
-                inputMode="tel"
-                value={number}
-                onChange={(e) => setNumber(e.target.value)}
-                placeholder="919876543210"
-              />
-            </Field>
-            <div className="btn-row">
-              <Button variant="primary" disabled={busy || number.trim() === ''} onClick={() => void saveNumber()}>
-                Save
-              </Button>
-              {invite?.whatsappNumber && <Button onClick={() => setEditing(false)}>Cancel</Button>}
-            </div>
-          </>
-        ) : (
-          <div className="btn-row" style={{ alignItems: 'center' }}>
-            <strong className="cell-num">+{invite.whatsappNumber}</strong>
-            <Button size="sm" onClick={() => setEditing(true)}>
-              Change
-            </Button>
-          </div>
-        )}
+        <Field label="Help & questions" hint="Shown on the player's home screen and on the sign-up screen.">
+          <input
+            className="input"
+            inputMode="tel"
+            value={draft.support}
+            onChange={(e) => setDraft({ ...draft, support: e.target.value })}
+            placeholder="919876543210"
+          />
+        </Field>
+        <Field label="Token requests" hint="Shown next to Request tokens. Leave empty to use your help number.">
+          <input
+            className="input"
+            inputMode="tel"
+            value={draft.tokens}
+            onChange={(e) => setDraft({ ...draft, tokens: e.target.value })}
+            placeholder="Same as help"
+          />
+        </Field>
+        <div className="btn-row">
+          <Button variant="primary" disabled={busy || !contactsChanged} onClick={() => void saveContacts()}>
+            Save numbers
+          </Button>
+        </div>
         {invite && (
           <div style={{ marginTop: 16 }}>
             <div className="field__label">Your sign-up link — share it with players</div>
