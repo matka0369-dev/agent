@@ -9,6 +9,7 @@ import {
   RatesSection,
   RequestQueueCard,
   Section,
+  SettlementsCard,
   Stat,
   SubtreePredictionsCard,
   TransferTokensCard,
@@ -23,7 +24,6 @@ import {
 import { PlayerInvites } from './PlayerInvites';
 import { PredictionsView } from './PredictionsView';
 import { PlayersTab } from './PlayersTab';
-import { AgentSettlements } from './AgentSettlements';
 import { AgentPnl } from './AgentPnl';
 import { ActivityLog } from './ActivityLog';
 import { StaffRoles } from './StaffRoles';
@@ -219,7 +219,7 @@ export function Dashboard() {
               are exact mirrors, so the server flips the signs rather than
               storing them twice. */}
           <Section id="settlements">
-            <AgentSettlements />
+            <SettlementsCard />
           </Section>
         </>
       )}
