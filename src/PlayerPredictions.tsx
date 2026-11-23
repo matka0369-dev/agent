@@ -16,19 +16,20 @@ let lastSelection = { playerId: '', from: dayString(0), to: dayString(0) };
 /**
  * One player's bets, added up per number, over a date range. The Predictions
  * tab is one day at a time across all players; looking at a single player over
- * several days is what this card is for.
+ * several days is what this is for, so it lives on that player's own page.
  */
-export function PlayerPredictions({ players }: { players: UserSummary[] }) {
+export function PlayerPredictions({ player }: { player: UserSummary }) {
   const { t } = useLang();
-  const [playerId, setPlayerId] = useState(lastSelection.playerId);
-  const [from, setFrom] = useState(lastSelection.from);
-  const [to, setTo] = useState(lastSelection.to);
-  const [rows, setRows] = useState<BetRow[]>(last && last.playerId === lastSelection.playerId ? last.rows : []);
+  const playerId = player.id;
+  // Opening the same player again picks up where you left off.
+  const resume = lastSelection.playerId === playerId;
+  const [from, setFrom] = useState(resume ? lastSelection.from : dayString(0));
+  const [to, setTo] = useState(resume ? lastSelection.to : dayString(0));
+  const [rows, setRows] = useState<BetRow[]>(last && last.playerId === playerId ? last.rows : []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function load(force = false) {
-    if (!playerId) return;
     if (!force && last && last.playerId === playerId && last.from === from && last.to === to && Date.now() - last.at < FRESH_MS) {
       setRows(last.rows);
       return;
@@ -56,7 +57,6 @@ export function PlayerPredictions({ players }: { players: UserSummary[] }) {
   const totalBets = rows.reduce((s, r) => s + r.betCount, 0);
   const totalTokens = rows.reduce((s, r) => s + r.totalStake, 0);
   const label = (typeId: string) => predictionTypeLabel(t, typeId as PredictionType);
-  const picked = players.find((p) => p.id === playerId);
 
   // A cleared date goes back to today; the range is never left backwards.
   const setFromSafe = (v: string) => {
@@ -76,16 +76,8 @@ export function PlayerPredictions({ players }: { players: UserSummary[] }) {
 
   return (
     <>
-      <Card title="Player predictions" desc="One player's bets over a range of days, added up per number.">
+      <Card title="Predictions" desc="This player's bets over a range of days, added up per number.">
         <div className="btn-row" style={{ alignItems: 'flex-end', flexWrap: 'wrap', gap: 12 }}>
-          <Field label="Player">
-            <select className="input" value={playerId} onChange={(e) => setPlayerId(e.target.value)}>
-              <option value="">Choose a player…</option>
-              {[...players].sort((a, b) => a.username.localeCompare(b.username)).map((p) => (
-                <option key={p.id} value={p.id}>{p.username}</option>
-              ))}
-            </select>
-          </Field>
           <Field label="From">
             <input className="input" type="date" value={from} max={to} onChange={(e) => setFromSafe(e.target.value)} />
           </Field>
@@ -96,20 +88,18 @@ export function PlayerPredictions({ players }: { players: UserSummary[] }) {
             <Button onClick={() => range(0)}>Today</Button>
             <Button onClick={() => range(6)}>Last 7 days</Button>
             <Button onClick={() => range(29)}>Last 30 days</Button>
-            <Button onClick={() => void load(true)} disabled={!playerId || loading}>Refresh</Button>
+            <Button onClick={() => void load(true)} disabled={loading}>Refresh</Button>
           </div>
         </div>
-        {picked && !loading && rows.length > 0 && (
+        {!loading && rows.length > 0 && (
           <p className="pb-sub" style={{ marginTop: 10 }}>
-            {picked.username}: {totalBets.toLocaleString()} bets · {fmt(totalTokens)} tokens · {from === to ? from : `${from} to ${to}`}
+            {totalBets.toLocaleString()} bets · {fmt(totalTokens)} tokens · {from === to ? from : `${from} to ${to}`}
           </p>
         )}
       </Card>
 
       {error && <Alert tone="error">{error}</Alert>}
-      {!playerId ? (
-        <Card><Empty>Choose a player to see their bets.</Empty></Card>
-      ) : loading ? (
+      {loading ? (
         <Card><Empty>Loading…</Empty></Card>
       ) : byType.length === 0 ? (
         <Card><Empty>No bets from this player in this range.</Empty></Card>

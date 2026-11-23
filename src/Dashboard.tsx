@@ -23,7 +23,7 @@ import {
 } from './shared';
 import { PlayerInvites } from './PlayerInvites';
 import { PredictionsView } from './PredictionsView';
-import { PlayerPredictions } from './PlayerPredictions';
+import { PlayersTab } from './PlayersTab';
 import { AgentPnl } from './AgentPnl';
 import { ActivityLog } from './ActivityLog';
 import { StaffRoles } from './StaffRoles';
@@ -180,15 +180,12 @@ export function Dashboard() {
       )}
 
       <Section id="players">
-        <UserTable
-          title="Your players"
-          desc="Players you've created — a Player belongs to whichever Agent created it, permanently."
-          users={players}
+        <PlayersTab
+          players={players}
           canManage={canManagePlayers}
+          canViewData={canViewData}
           onChanged={() => void load()}
         />
-        {/* A date range belongs here, on one player, not on the all-players Predictions tab. */}
-        {canViewData && <PlayerPredictions players={players} />}
       </Section>
 
       {canMoveTokens && (
