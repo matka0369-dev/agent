@@ -25,6 +25,17 @@ export interface PnlRow {
   net: number;
 }
 
+export interface DayResult {
+  gameId: string;
+  gameName: string;
+  date: string;
+  openPana: string | null;
+  closePana: string | null;
+  /** Ank: last digit of the pana's digit sum, derived server-side. */
+  openSingle: number | null;
+  closeSingle: number | null;
+}
+
 export interface AuditEntry {
   id: string;
   at: string;
@@ -38,6 +49,9 @@ export const opsApi = {
   wallet: () => call<{ balance: number; winningsBalance: number }>('GET', '/ledger/wallet'),
   aggregate: (q: { gameId?: string; from?: string; to?: string }) =>
     call<{ singleAgent: boolean; rows: BetRow[] }>('GET', `/predictions/aggregate${qs(q)}`),
+  /** Declared results for one day (optionally one game). */
+  results: (date: string, gameId?: string) =>
+    call<DayResult[]>('GET', `/games/results${qs({ date, gameId })}`),
   pnl: (q: { from?: string; to?: string }) =>
     call<{ rows: PnlRow[]; totals: Omit<PnlRow, 'gameId' | 'gameName' | 'date'> }>('GET', `/predictions/agent-pnl${qs(q)}`),
   audit: (q: { actorId?: string; action?: string; from?: string; to?: string }) =>

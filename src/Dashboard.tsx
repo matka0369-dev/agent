@@ -22,7 +22,7 @@ import {
   type UserSummary,
 } from './shared';
 import { PlayerInvites } from './PlayerInvites';
-import { ConsolidatedBets } from './ConsolidatedBets';
+import { PredictionsView } from './PredictionsView';
 import { AgentPnl } from './AgentPnl';
 import { ActivityLog } from './ActivityLog';
 import { StaffRoles } from './StaffRoles';
@@ -207,7 +207,7 @@ export function Dashboard() {
       {canViewData && (
         <>
           <Section id="totals">
-            <ConsolidatedBets />
+            <PredictionsView />
           </Section>
           <Section id="pnl">
             <AgentPnl />
