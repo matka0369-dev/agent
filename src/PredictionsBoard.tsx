@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Button, CopyButton, Empty, RefreshButton, predictionTypeLabel, useLang, type PredictionType } from './shared';
 import { dayString, ensureAll, refresh, setFilters, usePredictions } from './predictionsStore';
+import type { BetRow } from './consolidate';
 import './predictionsBoard.css';
 
 /**
@@ -21,7 +22,7 @@ import './predictionsBoard.css';
 
 const TZ = 'Asia/Kolkata';
 
-interface Line {
+export interface Line {
   number: string;
   bets: number;
   amount: number; // before the percentage cut
@@ -31,12 +32,12 @@ type SortKey = 'number' | 'amount';
 
 // No thousands separators, as on the dashboard's data-tables page.
 const rowsKey = (lines: Line[]) => lines.length;
-const fmt = (n: number) => new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2, useGrouping: false }).format(n);
+export const fmt = (n: number) => new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2, useGrouping: false }).format(n);
 
 // First digit of a Jodi ("05" -> 0, "47" -> 4).
 const jodiDigit = (n: string) => Math.min(9, Math.max(0, Math.floor((parseInt(n, 10) || 0) / 10)));
 
-function TypeTable({
+export function TypeTable({
   typeId,
   lines,
   label,
@@ -194,6 +195,24 @@ function TypeTable({
   );
 }
 
+/** One list of numbers per bet type, numbers merged across games and days. */
+export function groupByType(rows: BetRow[]): [PredictionType, Line[]][] {
+  const types = new Map<PredictionType, Map<string, Line>>();
+  for (const r of rows) {
+    const typeId = r.typeId as PredictionType;
+    let m = types.get(typeId);
+    if (!m) types.set(typeId, (m = new Map()));
+    const l = m.get(r.pickedNumber);
+    if (l) {
+      l.bets += r.betCount;
+      l.amount += r.totalStake;
+    } else {
+      m.set(r.pickedNumber, { number: r.pickedNumber, bets: r.betCount, amount: r.totalStake });
+    }
+  }
+  return [...types.entries()].map(([typeId, m]): [PredictionType, Line[]] => [typeId, [...m.values()]]);
+}
+
 export function PredictionsBoard() {
   const { t } = useLang();
   // Filters, rows and results all come from the shared store, so Board and
@@ -217,22 +236,7 @@ export function PredictionsBoard() {
   const pctUse = pctOk ? pct : 0;
 
   // One table per bet type, numbers merged across the selected games and days.
-  const byType = useMemo(() => {
-    const types = new Map<PredictionType, Map<string, Line>>();
-    for (const r of rows) {
-      const typeId = r.typeId as PredictionType;
-      let m = types.get(typeId);
-      if (!m) types.set(typeId, (m = new Map()));
-      const l = m.get(r.pickedNumber);
-      if (l) {
-        l.bets += r.betCount;
-        l.amount += r.totalStake;
-      } else {
-        m.set(r.pickedNumber, { number: r.pickedNumber, bets: r.betCount, amount: r.totalStake });
-      }
-    }
-    return [...types.entries()].map(([typeId, m]): [PredictionType, Line[]] => [typeId, [...m.values()]]);
-  }, [rows]);
+  const byType = useMemo(() => groupByType(rows), [rows]);
 
   const grandRaw = rows.reduce((s, r) => s + r.totalStake, 0);
   const grandCut = byType.reduce(

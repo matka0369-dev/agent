@@ -47,7 +47,7 @@ export interface AuditEntry {
 
 export const opsApi = {
   wallet: () => call<{ balance: number; winningsBalance: number }>('GET', '/ledger/wallet'),
-  aggregate: (q: { gameId?: string; from?: string; to?: string }) =>
+  aggregate: (q: { gameId?: string; from?: string; to?: string; playerId?: string }) =>
     call<{ singleAgent: boolean; rows: BetRow[] }>('GET', `/predictions/aggregate${qs(q)}`),
   /** Declared results for one day (optionally one game). */
   results: (date: string, gameId?: string) =>
