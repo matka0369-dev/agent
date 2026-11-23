@@ -392,7 +392,8 @@ export function PredictionsBoard() {
                 <div className={book.net < 0 ? 'is-neg' : 'is-pos'}><span>Net</span><strong>{fmt(book.net)}</strong></div>
               </div>
               <div className="pb-sub">
-                {book.pendingCount > 0 ? `${book.pendingCount} bets still open — net so far.` : 'All bets graded.'}
+                At the rate you give your players.
+                {book.pendingCount > 0 ? ` ${book.pendingCount} bets still open — net so far.` : ' All bets graded.'}
               </div>
             </>
           )}
