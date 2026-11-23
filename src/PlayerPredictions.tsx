@@ -3,6 +3,7 @@ import { Alert, Button, Card, Empty, Field, predictionTypeLabel, useLang, type P
 import { opsApi } from './opsApi';
 import type { BetRow } from './consolidate';
 import { dayString } from './predictionsStore';
+import './filterRow.css';
 import { fmt, groupByType, TypeTable } from './PredictionsBoard';
 import './predictionsBoard.css';
 
@@ -77,7 +78,7 @@ export function PlayerPredictions({ player }: { player: UserSummary }) {
   return (
     <>
       <Card title="Predictions" desc="This player's bets over a range of days, added up per number.">
-        <div className="btn-row" style={{ alignItems: 'flex-end', flexWrap: 'wrap', gap: 12 }}>
+        <div className="filter-row">
           <Field label="From">
             <input className="input" type="date" value={from} max={to} onChange={(e) => setFromSafe(e.target.value)} />
           </Field>

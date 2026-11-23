@@ -4,6 +4,7 @@ import {
   blockCopyText, blockTotal, cutAmount, groupBlocks, SORT_LABEL, sortRows, type SortKey,
 } from './consolidate';
 import { dayString, ensureAll, refresh, setFilters, usePredictions } from './predictionsStore';
+import './filterRow.css';
 
 /**
  * Every bet placed by this Agent's players, added up per number: all the money
@@ -34,14 +35,12 @@ export function ConsolidatedBets() {
   return (
     <>
       <Card title="Prediction totals" desc="All bets of your players, added up per number.">
-        <div className="btn-row" style={{ alignItems: 'flex-end', flexWrap: 'wrap', gap: 12 }}>
+        <div className="filter-row">
           <Field label="Date">
             <input className="input" type="date" value={date} onChange={(e) => setFilters({ date: e.target.value })} />
           </Field>
-          <div className="btn-row" style={{ alignSelf: 'flex-end' }}>
-            <Button onClick={() => setFilters({ date: dayString(0) })}>Today</Button>
-            <Button onClick={() => setFilters({ date: dayString(-1) })}>Yesterday</Button>
-          </div>
+          <Button onClick={() => setFilters({ date: dayString(0) })}>Today</Button>
+          <Button onClick={() => setFilters({ date: dayString(-1) })}>Yesterday</Button>
           <Field label="Game">
             <select className="input" value={gameId} onChange={(e) => setFilters({ gameId: e.target.value })}>
               <option value="">All games</option>
@@ -57,12 +56,15 @@ export function ConsolidatedBets() {
               ))}
             </select>
           </Field>
-          <Field label="Cut (%)" hint="Taken off every amount. 0 = none.">
+          {/* The explanation sits in a tooltip: a hint line under the box would make
+              this field taller than the rest and throw the buttons out of line. */}
+          <Field label="Cut (%)">
             <input
               className="input"
               style={{ width: 90 }}
               inputMode="decimal"
               value={percent}
+              title="Taken off every amount. 0 = none."
               placeholder="0"
               onChange={(e) => setFilters({ percent: e.target.value })}
             />

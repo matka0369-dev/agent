@@ -1,0 +1,29 @@
+/* A row of filters with action buttons beside them. Fields carry a bottom
+   margin for stacked forms, which pushes them above the buttons in a
+   bottom-aligned row, and the Copy button is the small size. Here the margins
+   go and every control gets the input's padding and font, so the heights match
+   and the row lines up. */
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+.filter-row .field { margin-bottom: 0; }
+.filter-row .btn,
+.filter-row .btn--sm {
+  padding: 9px 14px;
+  font-size: 0.9rem;
+}
+.filter-row .btn-row { align-items: flex-end; }
+
+/* One height for every control (inputs, dropdowns, buttons). Browsers size a
+   date input and a native dropdown differently from a text input, which left
+   a 2-4px stagger even with matching padding. */
+.filter-row .input,
+.filter-row .select,
+.filter-row .btn,
+.filter-row .btn--sm {
+  box-sizing: border-box;
+  height: 42px;
+}
