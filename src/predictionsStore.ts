@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react';
-import { opsApi, type DayResult } from './opsApi';
+import { opsApi, type DayResult, type PnlRow } from './opsApi';
 import type { BetRow, SortKey } from './consolidate';
 
 /**
@@ -40,9 +40,14 @@ export interface Snapshot {
   fetchedAt: number | null;
   results: DayResult[];
   resultsError: string | null;
+  /** What came in, what the Agent paid out to winners, and the difference, for the selected game and day. */
+  pnl: Pnl | null;
+  pnlError: string | null;
   games: { id: string; name: string }[];
   view: View;
 }
+
+export type Pnl = { rows: PnlRow[]; totals: Omit<PnlRow, 'gameId' | 'gameName' | 'date'> };
 
 // --- the per-browser default view -----------------------------------------
 
@@ -84,10 +89,15 @@ let error: string | null = null;
 let fetchedAt: number | null = null;
 let results: DayResult[] = [];
 let resultsError: string | null = null;
+let pnl: Pnl | null = null;
+let pnlError: string | null = null;
 let games: { id: string; name: string }[] = [];
 
 const dataCache = new Map<string, DataEntry>();
 const resultCache = new Map<string, ResultEntry>();
+const pnlCache = new Map<string, { data: Pnl; at: number }>();
+let pnlSeq = 0;
+let pnlInflight: { key: string; p: Promise<void> } | null = null;
 let dataSeq = 0;
 let resultSeq = 0;
 // A request already on its way for the same filters is reused, not repeated
@@ -97,6 +107,7 @@ let resultInflight: { key: string; p: Promise<void> } | null = null;
 
 const dataKey = (f: Filters) => JSON.stringify([f.gameId, f.date]);
 const resultKey = (f: Filters) => JSON.stringify([f.gameId, f.date]);
+const pnlKey = resultKey;
 
 /** The game dropdown is built from what the date range contains (an Agent has
  *  no game-list endpoint). Only an unfiltered load can tell what is there. */
@@ -113,7 +124,7 @@ const listeners = new Set<() => void>();
 let snapshot: Snapshot = build();
 
 function build(): Snapshot {
-  return { filters, rows, loading, error, fetchedAt, results, resultsError, games, view };
+  return { filters, rows, loading, error, fetchedAt, results, resultsError, pnl, pnlError, games, view };
 }
 function emit() {
   snapshot = build();
@@ -215,10 +226,46 @@ async function fetchResultsFor(id: number, key: string, f: Filters): Promise<voi
   emit();
 }
 
+/** The Agent's profit and loss for the selected game and day. */
+export async function ensurePnl(force = false): Promise<void> {
+  const key = pnlKey(filters);
+  const hit = pnlCache.get(key);
+  if (hit && !force && Date.now() - hit.at < FRESH_MS) {
+    pnl = hit.data;
+    pnlError = null;
+    emit();
+    return;
+  }
+  if (!force && pnlInflight?.key === key) return pnlInflight.p;
+
+  const id = ++pnlSeq;
+  const f = filters;
+  const p = (async () => {
+    try {
+      const d = await opsApi.pnl({ from: f.date, to: f.date, gameId: f.gameId || undefined });
+      if (id !== pnlSeq) return;
+      pnlCache.set(key, { data: d, at: Date.now() });
+      pnl = d;
+      pnlError = null;
+    } catch (e) {
+      if (id !== pnlSeq) return;
+      pnl = null;
+      pnlError = (e as Error).message;
+    }
+    emit();
+  })();
+  pnlInflight = { key, p };
+  void p.finally(() => {
+    if (pnlInflight?.p === p) pnlInflight = null;
+  });
+  return p;
+}
+
 /** Everything the page needs, from cache where it can. */
 export function ensureAll() {
   void ensureData();
   void ensureResults();
+  void ensurePnl();
 }
 
 // --- actions --------------------------------------------------------------------
@@ -233,12 +280,16 @@ export function setFilters(patch: Partial<Filters>) {
   emit();
   // Percentage and sort order are display lenses only, so they never refetch.
   if (dataKey(before) !== dataKey(filters)) void ensureData();
-  if (resultKey(before) !== resultKey(filters)) void ensureResults();
+  if (resultKey(before) !== resultKey(filters)) {
+    void ensureResults();
+    void ensurePnl();
+  }
 }
 
 export function refresh() {
   void ensureData(true);
   void ensureResults(true);
+  void ensurePnl(true);
 }
 
 export function setView(v: View) {
@@ -256,8 +307,12 @@ export function resetForTests() {
   fetchedAt = null;
   results = [];
   resultsError = null;
+  pnl = null;
+  pnlError = null;
   games = [];
   dataCache.clear();
+  pnlCache.clear();
+  pnlInflight = null;
   resultCache.clear();
   dataInflight = null;
   resultInflight = null;

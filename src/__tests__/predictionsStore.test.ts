@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const aggregate = vi.fn();
 const results = vi.fn();
-vi.mock('../opsApi', () => ({ opsApi: { aggregate: (...a: unknown[]) => aggregate(...a), results: (...a: unknown[]) => results(...a) } }));
+const pnl = vi.fn();
+vi.mock('../opsApi', () => ({ opsApi: { aggregate: (...a: unknown[]) => aggregate(...a), results: (...a: unknown[]) => results(...a), pnl: (...a: unknown[]) => pnl(...a) } }));
 
 import {
   dayString, ensureAll, ensureData, getDefaultView, refresh, resetForTests, setDefaultView, setFilters,
@@ -17,6 +18,7 @@ const flush = () => new Promise((r) => setTimeout(r, 0));
 beforeEach(() => {
   aggregate.mockReset().mockResolvedValue(rowsFor(2));
   results.mockReset().mockResolvedValue([]);
+  pnl.mockReset().mockResolvedValue({ rows: [], totals: { betCount: 0, wonCount: 0, pendingCount: 0, totalStake: 0, totalPayout: 0, net: 0 } });
   const mem = new Map<string, string>();
   vi.stubGlobal('localStorage', {
     getItem: (k: string) => mem.get(k) ?? null,
@@ -31,12 +33,26 @@ describe('predictions store', () => {
     await flush();
     expect(aggregate).toHaveBeenCalledTimes(1);
     expect(results).toHaveBeenCalledTimes(1);
+    expect(pnl).toHaveBeenCalledTimes(1);
 
     // a view switch or a tab change just re-mounts and calls ensureAll again
     ensureAll(); ensureAll();
     await flush();
     expect(aggregate).toHaveBeenCalledTimes(1);
     expect(results).toHaveBeenCalledTimes(1);
+    expect(pnl).toHaveBeenCalledTimes(1);
+  });
+
+  it('asks for the P&L of the selected game and day, and only again when those change', async () => {
+    ensureAll();
+    await flush();
+    expect(pnl).toHaveBeenLastCalledWith({ from: dayString(0), to: dayString(0), gameId: undefined });
+    setFilters({ percent: '10' }); // a display lens: no new P&L request
+    await flush();
+    expect(pnl).toHaveBeenCalledTimes(1);
+    setFilters({ gameId: 'g1' });
+    await flush();
+    expect(pnl).toHaveBeenLastCalledWith({ from: dayString(0), to: dayString(0), gameId: 'g1' });
   });
 
   it('does not repeat a request that is already in flight', async () => {

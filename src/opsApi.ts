@@ -52,7 +52,7 @@ export const opsApi = {
   /** Declared results for one day (optionally one game). */
   results: (date: string, gameId?: string) =>
     call<DayResult[]>('GET', `/games/results${qs({ date, gameId })}`),
-  pnl: (q: { from?: string; to?: string }) =>
+  pnl: (q: { from?: string; to?: string; gameId?: string }) =>
     call<{ rows: PnlRow[]; totals: Omit<PnlRow, 'gameId' | 'gameName' | 'date'> }>('GET', `/predictions/agent-pnl${qs(q)}`),
   audit: (q: { actorId?: string; action?: string; from?: string; to?: string }) =>
     call<AuditEntry[]>('GET', `/audit${qs({ ...q, limit: '300' })}`),

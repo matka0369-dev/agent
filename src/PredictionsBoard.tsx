@@ -217,7 +217,7 @@ export function PredictionsBoard() {
   const { t } = useLang();
   // Filters, rows and results all come from the shared store, so Board and
   // Classic show the same data and switching view or tab costs no request.
-  const { filters, rows, loading, error, fetchedAt, results, resultsError, games } = usePredictions();
+  const { filters, rows, loading, error, fetchedAt, results, resultsError, pnl, pnlError, games } = usePredictions();
   const { gameId, date, percent } = filters;
   const setPercent = (v: string) => setFilters({ percent: v });
   const setDay = (d: string) => setFilters({ date: d });
@@ -249,6 +249,9 @@ export function PredictionsBoard() {
   const single = gameId ? results.find((r) => r.gameId === gameId) ?? null : null;
   const hitDigit = single?.openSingle ?? null;
   const declared = results.filter((r) => r.openPana || r.closePana);
+
+  const book = pnl?.totals;
+  const gameName = gameId ? games.find((g) => g.id === gameId)?.name : undefined;
 
   // The declared winning number of each non-Jodi type, as a picked-number string.
   // Jodi is highlighted by its open-ank group instead; the Sangams have no single winner.
@@ -372,6 +375,26 @@ export function PredictionsBoard() {
             </div>
           ) : (
             <span className="pb-sub">No result declared for {gameId ? 'this game' : 'any game'} on this day.</span>
+          )}
+        </div>
+
+        <div className="pb-card">
+          <p className="pb-card__title">P&amp;L{gameName ? ` · ${gameName}` : ' · all games'}</p>
+          {pnlError ? (
+            <span className="pb-bad">{pnlError}</span>
+          ) : !book || book.betCount === 0 ? (
+            <span className="pb-sub">No bets on this day.</span>
+          ) : (
+            <>
+              <div className="pb-pnl">
+                <div><span>Stake</span><strong>{fmt(book.totalStake)}</strong></div>
+                <div><span>Paid</span><strong>{fmt(book.totalPayout)}</strong></div>
+                <div className={book.net < 0 ? 'is-neg' : 'is-pos'}><span>Net</span><strong>{fmt(book.net)}</strong></div>
+              </div>
+              <div className="pb-sub">
+                {book.pendingCount > 0 ? `${book.pendingCount} bets still open — net so far.` : 'All bets graded.'}
+              </div>
+            </>
           )}
         </div>
       </div>

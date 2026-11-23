@@ -118,3 +118,11 @@
 .pb-range { display: flex; align-items: center; gap: 8px; }
 .pb-range .input { flex: 1; min-width: 0; }
 .pb-range span { color: var(--text-muted); font-size: 12.5px; }
+
+/* P&L summary: three small figures in a corner card */
+.pb-pnl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.pb-pnl div { display: flex; flex-direction: column; gap: 2px; padding: 8px; border-radius: var(--radius-sm); background: var(--surface-2); border: 1px solid var(--border); min-width: 0; }
+.pb-pnl span { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+.pb-pnl strong { font-size: 17px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.pb-pnl .is-pos strong { color: var(--success); }
+.pb-pnl .is-neg strong { color: var(--danger); }
