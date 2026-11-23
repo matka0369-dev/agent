@@ -3,11 +3,11 @@ import { Alert, Button, Card, CopyButton, Empty, Field, TableWrap, predictionTyp
 import {
   blockCopyText, blockTotal, cutAmount, groupBlocks, SORT_LABEL, sortRows, type SortKey,
 } from './consolidate';
-import { ensureAll, refresh, setFilters, usePredictions } from './predictionsStore';
+import { dayString, ensureAll, refresh, setFilters, usePredictions } from './predictionsStore';
 
 /**
  * Every bet placed by this Agent's players, added up per number: all the money
- * on a number in one game and day becomes one line. Odds are deliberately not
+ * on a number in one game becomes one line, for one day at a time. Odds are deliberately not
  * shown — every player of an Agent plays at the same rate, so the Agent only
  * needs the amounts. The percentage box takes that share off every amount
  * (0 by default), and Copy gives the numbers after the cut.
@@ -19,7 +19,7 @@ import { ensureAll, refresh, setFilters, usePredictions } from './predictionsSto
 export function ConsolidatedBets() {
   const { t } = useLang();
   const { filters, rows, games, error, loading } = usePredictions();
-  const { from, to, gameId, sort, percent } = filters;
+  const { date, gameId, sort, percent } = filters;
 
   const pct = Math.min(Math.max(Number(percent) || 0, 0), 100);
 
@@ -35,12 +35,13 @@ export function ConsolidatedBets() {
     <>
       <Card title="Prediction totals" desc="All bets of your players, added up per number.">
         <div className="btn-row" style={{ alignItems: 'flex-end', flexWrap: 'wrap', gap: 12 }}>
-          <Field label="From">
-            <input className="input" type="date" value={from} max={to} onChange={(e) => setFilters({ from: e.target.value })} />
+          <Field label="Date">
+            <input className="input" type="date" value={date} onChange={(e) => setFilters({ date: e.target.value })} />
           </Field>
-          <Field label="To">
-            <input className="input" type="date" value={to} min={from} onChange={(e) => setFilters({ to: e.target.value })} />
-          </Field>
+          <div className="btn-row" style={{ alignSelf: 'flex-end' }}>
+            <Button onClick={() => setFilters({ date: dayString(0) })}>Today</Button>
+            <Button onClick={() => setFilters({ date: dayString(-1) })}>Yesterday</Button>
+          </div>
           <Field label="Game">
             <select className="input" value={gameId} onChange={(e) => setFilters({ gameId: e.target.value })}>
               <option value="">All games</option>

@@ -14,8 +14,9 @@ import './predictionsBoard.css';
  *   the Agent only needs the amounts.
  * - The percentage is a display lens only. Nothing is stored or re-fetched.
  *
- * There is no Date column. The page shows today by default (Today / Yesterday
- * buttons, or a From–To range); a number appears once with its combined amount.
+ * There is no Date column. The page shows one day, today by default (Today /
+ * Yesterday buttons); a number appears once with its combined amount. A date
+ * range lives on a single player's page, not here.
  */
 
 const TZ = 'Asia/Kolkata';
@@ -198,10 +199,9 @@ export function PredictionsBoard() {
   // Filters, rows and results all come from the shared store, so Board and
   // Classic show the same data and switching view or tab costs no request.
   const { filters, rows, loading, error, fetchedAt, results, resultsError, games } = usePredictions();
-  const { gameId, from, to, percent } = filters;
-  const oneDay = from === to;
+  const { gameId, date, percent } = filters;
   const setPercent = (v: string) => setFilters({ percent: v });
-  const setDay = (d: string) => setFilters({ from: d, to: d });
+  const setDay = (d: string) => setFilters({ date: d });
   const label = (typeId: string) => predictionTypeLabel(t, typeId as PredictionType);
 
   useEffect(() => {
@@ -316,11 +316,7 @@ export function PredictionsBoard() {
 
         <div className="pb-card">
           <p className="pb-card__title">Date</p>
-          <div className="pb-range">
-            <input className="input" type="date" value={from} max={to} onChange={(e) => setFilters({ from: e.target.value })} />
-            <span>to</span>
-            <input className="input" type="date" value={to} min={from} onChange={(e) => setFilters({ to: e.target.value })} />
-          </div>
+          <input className="input" type="date" value={date} onChange={(e) => setDay(e.target.value)} />
           <div className="pb-buttons">
             <Button size="sm" onClick={() => setDay(dayString(0))}>
               Today
@@ -329,14 +325,12 @@ export function PredictionsBoard() {
               Yesterday
             </Button>
           </div>
-          <div className="pb-sub">{oneDay ? `Showing ${from}.` : `Showing ${from} to ${to}.`}</div>
+          <div className="pb-sub">Showing {date}.</div>
         </div>
 
         <div className="pb-card">
           <p className="pb-card__title">Result</p>
-          {!oneDay ? (
-            <span className="pb-sub">Pick a single day to see its results.</span>
-          ) : resultsError ? (
+          {resultsError ? (
             <span className="pb-bad">{resultsError}</span>
           ) : single ? (
             <>

@@ -71,27 +71,28 @@ describe('predictions store', () => {
     expect(aggregate).toHaveBeenCalledTimes(2);
   });
 
-  it('keeps the range the right way round and never leaves a date blank', async () => {
-    setFilters({ from: '' });
-    setFilters({ to: '   ' });
+  it('never leaves the date blank, and one day means one request', async () => {
+    ensureAll();
     await flush();
-    expect(aggregate).not.toHaveBeenCalledWith(expect.objectContaining({ from: '' }));
+    setFilters({ date: '' });
+    setFilters({ date: '   ' });
+    await flush();
+    expect(aggregate).toHaveBeenCalledTimes(1); // blank snapped back to today: already cached
+    expect(aggregate.mock.calls[0][0]).toEqual({ gameId: undefined, from: dayString(0), to: dayString(0) });
 
-    setFilters({ from: dayString(-3), to: dayString(-3) });
-    setFilters({ from: dayString(-1) }); // past `to`: drags it along
+    setFilters({ date: dayString(-1) });
     await flush();
-    const last = aggregate.mock.calls.at(-1)![0];
-    expect(last.from <= last.to).toBe(true);
-    expect(last.from).toBe(dayString(-1));
+    expect(aggregate).toHaveBeenCalledTimes(2);
+    expect(aggregate.mock.calls[1][0]).toEqual({ gameId: undefined, from: dayString(-1), to: dayString(-1) });
   });
 
-  it('only asks for results when the range is a single day', async () => {
-    setFilters({ from: dayString(-2), to: dayString(0) });
+  it('asks for the declared results of the selected day', async () => {
+    ensureAll();
     await flush();
-    expect(results).not.toHaveBeenCalled();
-    setFilters({ from: dayString(0), to: dayString(0) });
+    expect(results).toHaveBeenCalledWith(dayString(0), undefined);
+    setFilters({ date: dayString(-2) });
     await flush();
-    expect(results).toHaveBeenCalledTimes(1);
+    expect(results).toHaveBeenLastCalledWith(dayString(-2), undefined);
   });
 });
 

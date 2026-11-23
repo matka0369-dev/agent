@@ -85,9 +85,9 @@ export function Dashboard() {
       ...(isNativeAgent ? [{ id: 'rates', label: 'Given & giving' }] : []),
       ...(canViewData
         ? [
-            { id: 'totals', label: 'Prediction totals' },
-            { id: 'pnl', label: 'Profit & loss' },
             { id: 'predictions', label: 'Predictions' },
+            { id: 'pnl', label: 'Profit & loss' },
+            { id: 'all-bets', label: 'All bets' },
             { id: 'settlements', label: 'Settlements' },
           ]
         : []),
@@ -206,14 +206,14 @@ export function Dashboard() {
 
       {canViewData && (
         <>
-          <Section id="totals">
+          <Section id="predictions">
             <PredictionsView />
           </Section>
           <Section id="pnl">
             <AgentPnl />
           </Section>
-          <Section id="predictions">
-            <SubtreePredictionsCard title="Predictions" desc="Every prediction placed by your players." />
+          <Section id="all-bets">
+            <SubtreePredictionsCard title="All bets" desc="Every prediction placed by your players, one line per bet." />
           </Section>
           {/* The same rows the Admin sees, from your side — the two positions
               are exact mirrors, so the server flips the signs rather than

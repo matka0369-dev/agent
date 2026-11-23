@@ -23,8 +23,8 @@ export const dayString = (offsetDays: number) =>
 
 export interface Filters {
   gameId: string;
-  from: string;
-  to: string;
+  /** One day at a time. (A date range belongs on a single player's page.) */
+  date: string;
   percent: string;
   sort: SortKey;
 }
@@ -76,7 +76,7 @@ interface ResultEntry {
   at: number;
 }
 
-let filters: Filters = { gameId: '', from: dayString(0), to: dayString(0), percent: '', sort: 'number-asc' };
+let filters: Filters = { gameId: '', date: dayString(0), percent: '', sort: 'number-asc' };
 let view: View = getDefaultView();
 let rows: BetRow[] = [];
 let loading = true;
@@ -95,10 +95,8 @@ let resultSeq = 0;
 let dataInflight: { key: string; p: Promise<void> } | null = null;
 let resultInflight: { key: string; p: Promise<void> } | null = null;
 
-const dataKey = (f: Filters) => JSON.stringify([f.gameId, f.from, f.to]);
-const resultKey = (f: Filters) => JSON.stringify([f.gameId, f.from]);
-/** A result belongs to one day, so only a single-day range has one to show. */
-const singleDay = (f: Filters) => f.from === f.to;
+const dataKey = (f: Filters) => JSON.stringify([f.gameId, f.date]);
+const resultKey = (f: Filters) => JSON.stringify([f.gameId, f.date]);
 
 /** The game dropdown is built from what the date range contains (an Agent has
  *  no game-list endpoint). Only an unfiltered load can tell what is there. */
@@ -161,7 +159,7 @@ export async function ensureData(force = false): Promise<void> {
 
 async function fetchData(id: number, key: string, f: Filters): Promise<void> {
   try {
-    const res = await opsApi.aggregate({ gameId: f.gameId || undefined, from: f.from, to: f.to });
+    const res = await opsApi.aggregate({ gameId: f.gameId || undefined, from: f.date, to: f.date });
     // A slower earlier request must not overwrite a newer one.
     if (id !== dataSeq) return;
     const at = Date.now();
@@ -181,15 +179,8 @@ async function fetchData(id: number, key: string, f: Filters): Promise<void> {
   }
 }
 
-/** Declared results for the selected day (and game). A multi-day range has no
- *  single result to show. */
+/** Declared results for the selected day (and game). */
 export async function ensureResults(force = false): Promise<void> {
-  if (!singleDay(filters)) {
-    results = [];
-    resultsError = null;
-    emit();
-    return;
-  }
   const key = resultKey(filters);
   const hit = resultCache.get(key);
   if (hit && !force && Date.now() - hit.at < FRESH_MS) {
@@ -211,7 +202,7 @@ export async function ensureResults(force = false): Promise<void> {
 
 async function fetchResultsFor(id: number, key: string, f: Filters): Promise<void> {
   try {
-    const r = await opsApi.results(f.from, f.gameId || undefined);
+    const r = await opsApi.results(f.date, f.gameId || undefined);
     if (id !== resultSeq) return;
     resultCache.set(key, { results: r, at: Date.now() });
     results = r;
@@ -234,20 +225,15 @@ export function ensureAll() {
 
 export function setFilters(patch: Partial<Filters>) {
   const before = filters;
-  // Every day added together is rarely wanted, so a date is never blank: a
-  // cleared field goes back to today instead of widening the query.
+  // A date is never blank: a cleared field goes back to today instead of
+  // widening the query.
   const next = { ...patch };
-  if (next.from !== undefined && next.from.trim() === '') next.from = dayString(0);
-  if (next.to !== undefined && next.to.trim() === '') next.to = dayString(0);
+  if (next.date !== undefined && next.date.trim() === '') next.date = dayString(0);
   filters = { ...filters, ...next };
-  // Keep the range the right way round: moving one end past the other drags the other along.
-  if (filters.from > filters.to) {
-    filters = next.from !== undefined ? { ...filters, to: filters.from } : { ...filters, from: filters.to };
-  }
   emit();
   // Percentage and sort order are display lenses only, so they never refetch.
   if (dataKey(before) !== dataKey(filters)) void ensureData();
-  if (resultKey(before) !== resultKey(filters) || singleDay(before) !== singleDay(filters)) void ensureResults();
+  if (resultKey(before) !== resultKey(filters)) void ensureResults();
 }
 
 export function refresh() {
@@ -262,7 +248,7 @@ export function setView(v: View) {
 
 /** Test seam: forget everything so a test starts from a clean store. */
 export function resetForTests() {
-  filters = { gameId: '', from: dayString(0), to: dayString(0), percent: '', sort: 'number-asc' };
+  filters = { gameId: '', date: dayString(0), percent: '', sort: 'number-asc' };
   view = getDefaultView();
   rows = [];
   loading = true;
